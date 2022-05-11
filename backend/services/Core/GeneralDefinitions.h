@@ -15,7 +15,7 @@ namespace GeneralDefinitions {
     class GeneralObject : public torch::nn::Module {
     protected:
         uint64_t m_id;
-        std::vector<uint8_t> m_moduleParams;
+        std::vector<uint64_t> m_moduleParams;
         std::unordered_map<uint64_t, torch::Tensor> m_inputs;
         std::set<uint64_t> m_expectedInputs;
     public:
@@ -27,44 +27,16 @@ namespace GeneralDefinitions {
             this->m_id = p_id;
         }
 
-        void calculateModuleParams(uint64_t argc, ... ) {
+        void setModuleParams(uint64_t p_argc, ... ) {
             va_list args;
-            va_start(args, argc);
+            va_start(args, p_argc);
 
-            uint64_t arg, mask, temp;
-            uint8_t ctr;
-            int8_t ptr1, ptr2;
             this->m_moduleParams.clear();
+            uint64_t arg;
 
-            for(uint8_t i = 0; i < argc; i++) {
-                ptr1 = -1, ptr2 = -1;
+            for(uint8_t i = 0; i < p_argc; i++) {
                 arg = va_arg(args, uint64_t);
-                mask = 0x8000000000000000;
-                ctr = 0;
-                
-                for(; mask > 0x0; mask >>= 1) { 
-                    temp = log2(mask & -mask) + 1;
-                    if((arg & mask) > 0x0 && ptr2 <= ptr1) {
-                        ptr1 = std::max((int64_t)temp, (int64_t)ptr1);
-                    }
-                    if((arg & mask) == 0x0 && ptr1 > -1) {
-                        ptr2 = temp;
-                    }
-                    ctr += 2*(ptr2 > -1);
-                    if(ptr1 > -1 && ptr2 > -1) {
-                        this->m_moduleParams.emplace_back((uint8_t)ptr1);
-                        this->m_moduleParams.emplace_back((uint8_t)ptr2);
-                    }
-                    ptr1 = (ptr2 > -1)?-1:ptr1;
-                    ptr2 = (ptr1 < 0)?-1:ptr2;
-                }
-                ctr += 2*(ptr1 > -1 && ptr2 < 0);
-                if(ptr1 > -1 && ptr2 < 0) {
-                    ptr2 = 0;
-                    this->m_moduleParams.emplace_back((uint8_t)ptr1);
-                    this->m_moduleParams.emplace_back((uint8_t)ptr2);
-                }
-                this->m_moduleParams.emplace_back(ctr);
+                this->m_moduleParams.emplace_back(arg);
             }
         }
 
@@ -82,8 +54,12 @@ namespace GeneralDefinitions {
             this->m_inputs.clear();
         }
 
-        bool checkInputs() {
+        uint8_t checkInputs() {
             return this->m_expectedInputs.size() == 0;
+        }
+
+        std::unordered_map<uint64_t, torch::Tensor>* getInputsPointer() {
+            return &this->m_inputs;
         }
 
         void addExpectedInput(uint64_t p_source) {
@@ -109,6 +85,13 @@ namespace GeneralDefinitions {
             this->m_idValue = 1;
         }
 
+        std::unordered_map<uint64_t, std::set<uint64_t> >* getAdjacencyPointer() {
+            return &this->m_adjacency;
+        }
+        std::unordered_map<uint64_t, std::set<uint64_t> >* getAdjacencyTransposePointer() {
+            return &this->m_adjacencyTranspose;
+        }
+
         std::unordered_map<uint64_t, std::shared_ptr<GeneralObject> > getModules() {
             return this->m_modules;
         }
@@ -118,14 +101,18 @@ namespace GeneralDefinitions {
             this->m_modules[p_module->getId()] = register_module(std::to_string(p_module->getId()), p_module);
         }
 
-        bool addEdge(uint64_t p_source, uint64_t p_destination) {
+        uint8_t addEdge(uint64_t p_source, uint64_t p_destination) {
             if(this->m_adjacency[p_source].find(p_destination) != this->m_adjacency[p_source].end()
             || this->m_adjacency[p_destination].find(p_source) != this->m_adjacency[p_destination].end()
             || p_source == p_destination)
-                return false;
+                return 0;
             this->m_adjacency[p_source].insert(p_destination);
             this->m_adjacencyTranspose[p_destination].insert(p_source);
-            return true;
+            if(this->cycleDetection()) {
+                this->removeEdge(p_source, p_destination);
+                return 0;
+            }
+            return 1;
         }
 
         void removeEdge(uint64_t p_source, uint64_t p_destination) {
@@ -145,7 +132,7 @@ namespace GeneralDefinitions {
             this->m_adjacencyTranspose.erase(p_module);
         }
 
-        bool cycleDetection() {
+        uint8_t cycleDetection() {
             std::unordered_map<uint64_t, uint64_t> inDegree;
             for(auto& mod : this->m_modules) {
                 for(auto& adj : this->m_adjacency[mod.first]) {
@@ -175,8 +162,14 @@ namespace GeneralDefinitions {
             return counter != this->m_modules.size();
         }
 
+        void addToInput(uint64_t p_source, torch::Tensor& p_input) {
+            this->m_expectedInputs.erase(p_source);
+            this->m_inputs[0] = p_input;
+        }
+
         void preprocessing() {
             for(auto& itr : this->m_adjacencyTranspose) {
+                this->m_modules[itr.first]->clearInputs();
                 for(auto& input : itr.second) {
                     this->m_modules[itr.first]->addExpectedInput(input);
                 }
@@ -190,16 +183,12 @@ namespace GeneralDefinitions {
         }
 
         torch::Tensor forward() {
-            if(this->cycleDetection()) {
-                return torch::empty(this->m_inputs[0].sizes());
-            }
-
             this->preprocessing();
             std::unordered_map<uint64_t, uint8_t> visited;
             std::queue<uint64_t> q;
             std::queue<torch::Tensor> qTensor;
 
-            q.push(1);
+            q.push(0);
             qTensor.push(this->m_inputs[0]);
 
             uint64_t currentModule;

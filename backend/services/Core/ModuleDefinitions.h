@@ -23,7 +23,7 @@ namespace ModuleDefinitions {
         */
 
     public:
-        FullyConnectedModule(uint64_t n = 1, uint64_t m = 1, uint64_t o = -1, bool bias = true, uint8_t type = 1) {
+        FullyConnectedModule(uint64_t n = 1, uint64_t m = 1, uint64_t o = -1, uint8_t bias = 1, uint8_t type = 1) {
             switch(type) {
                 case 1:
                     this->m_linearModule = register_module(std::to_string(this->m_id), torch::nn::Linear(torch::nn::LinearOptions(n, m).bias(bias)));
@@ -35,10 +35,10 @@ namespace ModuleDefinitions {
                     break;
             }
             this->setId(1);
-            this->calculateModuleParams(5, n, m, o, bias, type);
+            this->setModuleParams(5, n, m, o, bias, type);
         }
 
-        void replaceModule(uint64_t n = 1, uint64_t m = 1, uint64_t o = -1, bool bias = true, uint8_t type = 1) {
+        void replaceModule(uint64_t n = 1, uint64_t m = 1, uint64_t o = -1, uint8_t bias = 1, uint8_t type = 1) {
             switch(type) {
                 case 1:
                     this->m_linearModule = replace_module(std::to_string(this->m_id), torch::nn::Linear(torch::nn::LinearOptions(n, m).bias(bias)));
@@ -52,7 +52,7 @@ namespace ModuleDefinitions {
                     break;
             }
             this->setId(1);
-            this->calculateModuleParams(5, n, m, o, bias, type);
+            this->setModuleParams(5, n, m, o, bias, type);
         }
 
         virtual torch::Tensor forward() {
@@ -74,7 +74,7 @@ namespace ModuleDefinitions {
         torch::nn::ConvTranspose2d m_convTranspose2d{nullptr};
         torch::nn::ConvTranspose3d m_convTranspose3d{nullptr};
     public:
-        ConvolutionModule(uint64_t in = 1, uint64_t out = 1, uint64_t kernel = 1, uint64_t stride = 1, bool bias = true, uint8_t type = 1) {
+        ConvolutionModule(uint64_t in = 1, uint64_t out = 1, uint64_t kernel = 1, uint64_t stride = 1, uint8_t bias = 1, uint8_t type = 1) {
             switch(type) {
                 case 1:
                     this->m_conv1d = register_module(std::to_string(this->m_id), torch::nn::Conv1d(torch::nn::Conv1dOptions(in, out, kernel).stride(stride).bias(bias)));
@@ -98,10 +98,10 @@ namespace ModuleDefinitions {
                     break;
             }
             this->setId(2);
-            this->calculateModuleParams(6, in, out, kernel, stride, bias, type);
+            this->setModuleParams(6, in, out, kernel, stride, bias, type);
         }
 
-        void replaceModule(uint64_t in = 1, uint64_t out = 1, uint64_t kernel = 1, uint64_t stride = 1, bool bias = true, uint8_t type = 1) { 
+        void replaceModule(uint64_t in = 1, uint64_t out = 1, uint64_t kernel = 1, uint64_t stride = 1, uint8_t bias = 1, uint8_t type = 1) { 
             this->m_conv1d = torch::nn::Conv1d{nullptr};
             this->m_conv2d = torch::nn::Conv2d{nullptr};
             this->m_conv3d = torch::nn::Conv3d{nullptr};
@@ -131,7 +131,7 @@ namespace ModuleDefinitions {
                     break;
             }
             this->setId(2);
-            this->calculateModuleParams(6, in, out, kernel, stride, bias, type);
+            this->setModuleParams(6, in, out, kernel, stride, bias, type);
         }
 
         virtual torch::Tensor forward() {
@@ -159,13 +159,13 @@ namespace ModuleDefinitions {
         EmbeddingModule(uint64_t num = 1, uint64_t size = 1, uint64_t padding = 0, uint64_t maxNorm = 1, uint64_t normType = 2) {
             this->m_embedding = register_module(std::to_string(this->m_id), torch::nn::Embedding(torch::nn::EmbeddingOptions(num, size).padding_idx(padding).max_norm(maxNorm).norm_type(normType)));
             this->setId(3);
-            this->calculateModuleParams(5, num, size, padding, maxNorm, normType);
+            this->setModuleParams(5, num, size, padding, maxNorm, normType);
         }
 
         void replaceModule(uint64_t num = 1, uint64_t size = 1, uint64_t padding = 0, uint64_t maxNorm = 1, uint64_t normType = 2) {
             this->m_embedding = replace_module(std::to_string(this->m_id), torch::nn::Embedding(torch::nn::EmbeddingOptions(num, size).padding_idx(padding).max_norm(maxNorm).norm_type(normType)));
             this->setId(3);
-            this->calculateModuleParams(5, num, size, padding, maxNorm, normType);
+            this->setModuleParams(5, num, size, padding, maxNorm, normType);
         }
 
         virtual torch::Tensor forward() {
@@ -180,7 +180,7 @@ namespace ModuleDefinitions {
         torch::nn::GRU m_gru{nullptr};
         torch::nn::LSTM m_lstm{nullptr};
     public:
-        RecurrentModule(uint64_t input = 1, uint64_t hidden = 1, uint64_t layers = 1, double dropout = 0, bool bidirectional = false, uint8_t type = 1) {
+        RecurrentModule(uint64_t input = 1, uint64_t hidden = 1, uint64_t layers = 1, double dropout = 0, uint8_t bidirectional = 0, uint8_t type = 1) {
             switch(type) {
                 case 1:
                     this->m_rnn = register_module(std::to_string(this->m_id), torch::nn::RNN(torch::nn::RNNOptions(input, hidden).num_layers(layers).dropout(dropout).bidirectional(bidirectional)));
@@ -195,10 +195,10 @@ namespace ModuleDefinitions {
                     break;
             }
             this->setId(4);
-            this->calculateModuleParams(6, input, hidden, layers, *(uint64_t*)&dropout, bidirectional, type);
+            this->setModuleParams(6, input, hidden, layers, *(uint64_t*)&dropout, bidirectional, type);
         }
 
-        void replaceModule(uint64_t input = 1, uint64_t hidden = 1, uint64_t layers = 1, double dropout = 0, bool bidirectional = false, uint8_t type = 1) {
+        void replaceModule(uint64_t input = 1, uint64_t hidden = 1, uint64_t layers = 1, double dropout = 0, uint8_t bidirectional = 0, uint8_t type = 1) {
             this->m_rnn = torch::nn::RNN{nullptr};
             this->m_gru = torch::nn::GRU{nullptr};
             this->m_lstm = torch::nn::LSTM{nullptr};
@@ -216,7 +216,7 @@ namespace ModuleDefinitions {
                     break;
             }
             this->setId(4);
-            this->calculateModuleParams(6, input, hidden, layers, *(uint64_t*)&dropout, bidirectional, type);
+            this->setModuleParams(6, input, hidden, layers, *(uint64_t*)&dropout, bidirectional, type);
         }
 
         virtual torch::Tensor forward() {
@@ -238,13 +238,13 @@ namespace ModuleDefinitions {
         TransformerModule(uint64_t inputs = 1, uint64_t heads = 1, uint64_t encoderLayers = 1, uint64_t decoderLayers = 1) {
             this->m_transformer = register_module(std::to_string(this->m_id), torch::nn::Transformer(torch::nn::TransformerOptions(inputs, heads).num_encoder_layers(encoderLayers).num_decoder_layers(decoderLayers)));
             this->setId(5);
-            this->calculateModuleParams(4, inputs, heads, encoderLayers, decoderLayers);
+            this->setModuleParams(4, inputs, heads, encoderLayers, decoderLayers);
         }
 
         void replaceModule(uint64_t inputs = 1, uint64_t heads = 1, uint64_t encoderLayers = 1, uint64_t decoderLayers = 1) {
             this->m_transformer = replace_module(std::to_string(this->m_id), torch::nn::Transformer(torch::nn::TransformerOptions(inputs, heads).num_encoder_layers(encoderLayers).num_decoder_layers(decoderLayers)));
             this->setId(5);
-            this->calculateModuleParams(4, inputs, heads, encoderLayers, decoderLayers);
+            this->setModuleParams(4, inputs, heads, encoderLayers, decoderLayers);
         }
 
         virtual torch::Tensor forward() {
@@ -326,7 +326,7 @@ namespace ModuleDefinitions {
                     break;
             }
             this->setId(6);
-            this->calculateModuleParams(8, x, y, z, strideX, strideY, strideZ, norm, type);
+            this->setModuleParams(8, x, y, z, strideX, strideY, strideZ, norm, type);
         }
 
         void replaceModule(uint64_t x, uint64_t y, uint64_t z, uint64_t strideX, uint64_t strideY, uint64_t strideZ, uint64_t norm, uint8_t type) {
@@ -400,7 +400,7 @@ namespace ModuleDefinitions {
                     break;
             }
             this->setId(6);
-            this->calculateModuleParams(8, x, y, z, strideX, strideY, strideZ, norm, type);
+            this->setModuleParams(8, x, y, z, strideX, strideY, strideZ, norm, type);
         }
 
         virtual torch::Tensor forward() {
@@ -490,7 +490,7 @@ namespace ModuleDefinitions {
                     break;    
             }
             this->setId(7);
-            this->calculateModuleParams(8, p1, p2, p3, p4, p5, p6, *(uint64_t*)&p7, type);
+            this->setModuleParams(8, p1, p2, p3, p4, p5, p6, *(uint64_t*)&p7, type);
         }
 
         void replaceModule(uint64_t p1 = 1, uint64_t p2 = 1, uint64_t p3 = 1, uint64_t p4 = 1, uint64_t p5 = 1, uint64_t p6 = 1, double p7 = 0.0, uint8_t type = 1) {
@@ -539,7 +539,7 @@ namespace ModuleDefinitions {
                     break;    
             }
             this->setId(7);
-            this->calculateModuleParams(8, p1, p2, p3, p4, p5, p6, *(uint64_t*)&p7, type);
+            this->setModuleParams(8, p1, p2, p3, p4, p5, p6, *(uint64_t*)&p7, type);
         }
 
         virtual torch::Tensor foward() {
@@ -613,7 +613,7 @@ namespace ModuleDefinitions {
                     break;
             }
             this->setId(8);
-            this->calculateModuleParams(7, numFeatures1, numFeatures2, *(uint64_t*)&epsilon, *(uint64_t*)&momentum, *(uint64_t*)&alpha, *(uint64_t*)&beta, type);
+            this->setModuleParams(7, numFeatures1, numFeatures2, *(uint64_t*)&epsilon, *(uint64_t*)&momentum, *(uint64_t*)&alpha, *(uint64_t*)&beta, type);
         }
 
         void replaceModule(uint64_t numFeatures1 = 1, uint64_t numFeatures2 = 1, double epsilon = 0.00005, double momentum = 0.1, double alpha = 0.0001, double beta = 0.75, uint8_t type = 1) {
@@ -658,7 +658,7 @@ namespace ModuleDefinitions {
                     break;
             }
             this->setId(8);
-            this->calculateModuleParams(7, numFeatures1, numFeatures2, *(uint64_t*)&epsilon, *(uint64_t*)&momentum, *(uint64_t*)&alpha, *(uint64_t*)&beta, type);
+            this->setModuleParams(7, numFeatures1, numFeatures2, *(uint64_t*)&epsilon, *(uint64_t*)&momentum, *(uint64_t*)&alpha, *(uint64_t*)&beta, type);
         }
 
         virtual torch::Tensor forward() {
@@ -714,7 +714,7 @@ namespace ModuleDefinitions {
                     break;
             }
             this->setId(9);
-            this->calculateModuleParams(2, *(uint64_t*)&p, type);
+            this->setModuleParams(2, *(uint64_t*)&p, type);
         }
 
         void replaceModule(double p = 0.5, uint8_t type = 1) {
@@ -743,7 +743,7 @@ namespace ModuleDefinitions {
                     break;
             }
             this->setId(9);
-            this->calculateModuleParams(2, *(uint64_t*)&p, type);
+            this->setModuleParams(2, *(uint64_t*)&p, type);
         }
 
         virtual torch::Tensor forward() {
@@ -791,7 +791,7 @@ namespace ModuleDefinitions {
         torch::nn::Softmax2d m_softmax2d{nullptr};
         torch::nn::LogSoftmax m_logSoftmax{nullptr};
     public:
-        ActivationModule(double param1 = 1.0, double param2 = 1.0, uint64_t param3 = 1, uint64_t param4 = 1, double param5 = 1.0, bool bias = true, uint8_t type = 1) {
+        ActivationModule(double param1 = 1.0, double param2 = 1.0, uint64_t param3 = 1, uint64_t param4 = 1, double param5 = 1.0, uint8_t bias = 1, uint8_t type = 1) {
             switch(type) {
                 case 1:
                     this->m_elu = register_module(std::to_string(this->m_id), torch::nn::ELU(torch::nn::ELUOptions().alpha(param1).inplace(true)));
@@ -875,10 +875,10 @@ namespace ModuleDefinitions {
                     break;
             }
             this->setId(10);
-            this->calculateModuleParams(7, *(uint64_t*)&param1, *(uint64_t*)&param2, param3, param4, *(uint64_t*)&param5, bias, type);
+            this->setModuleParams(7, *(uint64_t*)&param1, *(uint64_t*)&param2, param3, param4, *(uint64_t*)&param5, bias, type);
         }
 
-        void replaceModule(double param1 = 1.0, double param2 = 1.0, uint64_t param3 = 1, uint64_t param4 = 1, double param5 = 1.0, bool bias = true, uint8_t type = 1) {
+        void replaceModule(double param1 = 1.0, double param2 = 1.0, uint64_t param3 = 1, uint64_t param4 = 1, double param5 = 1.0, uint8_t bias = 1, uint8_t type = 1) {
             this->m_elu = torch::nn::ELU{nullptr};
             this->m_hardShrink = torch::nn::Hardshrink{nullptr};
             this->m_hardTanh = torch::nn::Hardtanh{nullptr};
@@ -989,7 +989,7 @@ namespace ModuleDefinitions {
                     break;
             }
             this->setId(10);
-            this->calculateModuleParams(7, *(uint64_t*)&param1, *(uint64_t*)&param2, param3, param4, *(uint64_t*)&param5, bias, type);
+            this->setModuleParams(7, *(uint64_t*)&param1, *(uint64_t*)&param2, param3, param4, *(uint64_t*)&param5, bias, type);
         }
 
         virtual torch::Tensor forward() {
