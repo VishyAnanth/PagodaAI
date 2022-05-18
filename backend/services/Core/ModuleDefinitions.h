@@ -11,47 +11,44 @@ namespace ModuleDefinitions {
     private:
         torch::nn::Linear m_linearModule{nullptr};
         torch::nn::Bilinear m_bilinearModule{nullptr};
-        /*
-                                                                                                                                                            Consecutive 0s      Consecutive 1s
-            id = 1      0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1     16                  16                  
-            n = 500     0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 0 1 0 0     48                  32
-            m = 1000    0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 0 1 0 0 0     48                  32
-            o = 100     0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 1 0 0     48                  32
-            bias = 0    0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0     8                   8                   
-            sku = 1     0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1     16                  16
-                                                                                                                                                            =184                =136
-        */
-
     public:
-        FullyConnectedModule(uint64_t n = 1, uint64_t m = 1, uint64_t o = -1, uint8_t bias = 1, uint8_t type = 1) {
+        FullyConnectedModule(uint64_t n = 1, uint64_t m = 1, uint64_t o = -1, uint64_t bias = 1, uint64_t type = 0) {
+            this->m_id = 1;
+            this->setModuleParams(5, n, m, o, bias, type);
+        }
+
+        void setId(uint64_t p_id) {
+            Pagoda::GeneralDefinitions::GeneralObject::setId(p_id);
+            uint64_t n = this->m_moduleParams[0], 
+                        m = this->m_moduleParams[1], 
+                        o = this->m_moduleParams[2],
+                        bias = this->m_moduleParams[3], 
+                        type = this->m_moduleParams[4];
             switch(type) {
-                case 1:
+                case 0:
                     this->m_linearModule = register_module(std::to_string(this->m_id), torch::nn::Linear(torch::nn::LinearOptions(n, m).bias(bias)));
                     break;
-                case 2:
+                case 1:
                     this->m_bilinearModule = register_module(std::to_string(this->m_id), torch::nn::Bilinear(torch::nn::BilinearOptions(n,m,o).bias(bias)));
                     break;
                 default:
                     break;
             }
-            this->setId(1);
-            this->setModuleParams(5, n, m, o, bias, type);
         }
 
-        void replaceModule(uint64_t n = 1, uint64_t m = 1, uint64_t o = -1, uint8_t bias = 1, uint8_t type = 1) {
+        void replaceModule(uint64_t n = 1, uint64_t m = 1, uint64_t o = -1, uint64_t bias = 1, uint64_t type = 0) {
             switch(type) {
-                case 1:
+                case 0:
                     this->m_linearModule = replace_module(std::to_string(this->m_id), torch::nn::Linear(torch::nn::LinearOptions(n, m).bias(bias)));
                     this->m_bilinearModule = torch::nn::Bilinear{nullptr};
                     break;
-                case 2:
+                case 1:
                     this->m_bilinearModule = replace_module(std::to_string(this->m_id), torch::nn::Bilinear(torch::nn::BilinearOptions(n,m,o).bias(bias)));
                     this->m_linearModule = torch::nn::Linear{nullptr};
                     break;
                 default:
                     break;
             }
-            this->setId(1);
             this->setModuleParams(5, n, m, o, bias, type);
         }
 
@@ -74,34 +71,44 @@ namespace ModuleDefinitions {
         torch::nn::ConvTranspose2d m_convTranspose2d{nullptr};
         torch::nn::ConvTranspose3d m_convTranspose3d{nullptr};
     public:
-        ConvolutionModule(uint64_t in = 1, uint64_t out = 1, uint64_t kernel = 1, uint64_t stride = 1, uint8_t bias = 1, uint8_t type = 1) {
+        ConvolutionModule(uint64_t in = 1, uint64_t out = 1, uint64_t kernel = 1, uint64_t stride = 1, uint64_t bias = 1, uint64_t type = 0) {
+            this->m_id = 2;
+            this->setModuleParams(6, in, out, kernel, stride, bias, type);
+        }
+
+        void setId(uint64_t p_id) {
+            Pagoda::GeneralDefinitions::GeneralObject::setId(p_id);
+            uint64_t in = this->m_moduleParams[0],
+                        out = this->m_moduleParams[1],
+                        kernel = this->m_moduleParams[2],
+                        stride = this->m_moduleParams[3],
+                        bias = this->m_moduleParams[4],
+                        type = this->m_moduleParams[5];
             switch(type) {
-                case 1:
+                case 0:
                     this->m_conv1d = register_module(std::to_string(this->m_id), torch::nn::Conv1d(torch::nn::Conv1dOptions(in, out, kernel).stride(stride).bias(bias)));
                     break;
-                case 2:
+                case 1:
                     this->m_conv2d = register_module(std::to_string(this->m_id), torch::nn::Conv2d(torch::nn::Conv2dOptions(in, out, kernel).stride(stride).bias(bias)));
                     break;
-                case 3:
+                case 2:
                     this->m_conv3d = register_module(std::to_string(this->m_id), torch::nn::Conv3d(torch::nn::Conv3dOptions(in, out, kernel).stride(stride).bias(bias)));
                     break;
-                case 4:
+                case 3:
                     this->m_convTranspose1d = register_module(std::to_string(this->m_id), torch::nn::ConvTranspose1d(torch::nn::ConvTranspose1dOptions(in, out, kernel).stride(stride).bias(bias)));
                     break;
-                case 5:
+                case 4:
                     this->m_convTranspose2d = register_module(std::to_string(this->m_id), torch::nn::ConvTranspose2d(torch::nn::ConvTranspose2dOptions(in, out, kernel).stride(stride).bias(bias)));
                     break;
-                case 6:
+                case 5:
                     this->m_convTranspose3d = register_module(std::to_string(this->m_id), torch::nn::ConvTranspose3d(torch::nn::ConvTranspose3dOptions(in, out, kernel).stride(stride).bias(bias)));
                     break;
                 default:
                     break;
             }
-            this->setId(2);
-            this->setModuleParams(6, in, out, kernel, stride, bias, type);
         }
 
-        void replaceModule(uint64_t in = 1, uint64_t out = 1, uint64_t kernel = 1, uint64_t stride = 1, uint8_t bias = 1, uint8_t type = 1) { 
+        void replaceModule(uint64_t in = 1, uint64_t out = 1, uint64_t kernel = 1, uint64_t stride = 1, uint64_t bias = 1, uint64_t type = 0) { 
             this->m_conv1d = torch::nn::Conv1d{nullptr};
             this->m_conv2d = torch::nn::Conv2d{nullptr};
             this->m_conv3d = torch::nn::Conv3d{nullptr};
@@ -109,28 +116,27 @@ namespace ModuleDefinitions {
             this->m_convTranspose2d = torch::nn::ConvTranspose2d{nullptr};
             this->m_convTranspose3d = torch::nn::ConvTranspose3d{nullptr};
             switch(type) {
-                case 1:
+                case 0:
                     this->m_conv1d = replace_module(std::to_string(this->m_id), torch::nn::Conv1d(torch::nn::Conv1dOptions(in, out, kernel).stride(stride).bias(bias)));
                     break;
-                case 2:
+                case 1:
                     this->m_conv2d = replace_module(std::to_string(this->m_id), torch::nn::Conv2d(torch::nn::Conv2dOptions(in, out, kernel).stride(stride).bias(bias)));
                     break;
-                case 3:
+                case 2:
                     this->m_conv3d = replace_module(std::to_string(this->m_id), torch::nn::Conv3d(torch::nn::Conv3dOptions(in, out, kernel).stride(stride).bias(bias)));
                     break;
-                case 4:
+                case 3:
                     this->m_convTranspose1d = replace_module(std::to_string(this->m_id), torch::nn::ConvTranspose1d(torch::nn::ConvTranspose1dOptions(in, out, kernel).stride(stride).bias(bias)));
                     break;
-                case 5:
+                case 4:
                     this->m_convTranspose2d = replace_module(std::to_string(this->m_id), torch::nn::ConvTranspose2d(torch::nn::ConvTranspose2dOptions(in, out, kernel).stride(stride).bias(bias)));
                     break;
-                case 6:
+                case 5:
                     this->m_convTranspose3d = replace_module(std::to_string(this->m_id), torch::nn::ConvTranspose3d(torch::nn::ConvTranspose3dOptions(in, out, kernel).stride(stride).bias(bias)));
                     break;
                 default:
                     break;
             }
-            this->setId(2);
             this->setModuleParams(6, in, out, kernel, stride, bias, type);
         }
 
@@ -157,14 +163,22 @@ namespace ModuleDefinitions {
         torch::nn::Embedding m_embedding{nullptr};
     public:
         EmbeddingModule(uint64_t num = 1, uint64_t size = 1, uint64_t padding = 0, uint64_t maxNorm = 1, uint64_t normType = 2) {
-            this->m_embedding = register_module(std::to_string(this->m_id), torch::nn::Embedding(torch::nn::EmbeddingOptions(num, size).padding_idx(padding).max_norm(maxNorm).norm_type(normType)));
-            this->setId(3);
+            this->m_id = 3;
             this->setModuleParams(5, num, size, padding, maxNorm, normType);
+        }
+
+        void setId(uint64_t p_id) {
+            Pagoda::GeneralDefinitions::GeneralObject::setId(p_id);
+            uint64_t num = this->m_moduleParams[0],
+                        size = this->m_moduleParams[1],
+                        padding = this->m_moduleParams[2],
+                        maxNorm = this->m_moduleParams[3],
+                        normType = this->m_moduleParams[4];
+            this->m_embedding = register_module(std::to_string(this->m_id), torch::nn::Embedding(torch::nn::EmbeddingOptions(num, size).padding_idx(padding).max_norm(maxNorm).norm_type(normType)));
         }
 
         void replaceModule(uint64_t num = 1, uint64_t size = 1, uint64_t padding = 0, uint64_t maxNorm = 1, uint64_t normType = 2) {
             this->m_embedding = replace_module(std::to_string(this->m_id), torch::nn::Embedding(torch::nn::EmbeddingOptions(num, size).padding_idx(padding).max_norm(maxNorm).norm_type(normType)));
-            this->setId(3);
             this->setModuleParams(5, num, size, padding, maxNorm, normType);
         }
 
@@ -180,42 +194,51 @@ namespace ModuleDefinitions {
         torch::nn::GRU m_gru{nullptr};
         torch::nn::LSTM m_lstm{nullptr};
     public:
-        RecurrentModule(uint64_t input = 1, uint64_t hidden = 1, uint64_t layers = 1, double dropout = 0, uint8_t bidirectional = 0, uint8_t type = 1) {
+        RecurrentModule(uint64_t input = 1, uint64_t hidden = 1, uint64_t layers = 1, double dropout = 0, uint64_t bidirectional = 0, uint64_t type = 0) {
+            this->m_id = 4;
+            this->setModuleParams(6, input, hidden, layers, *(uint64_t*)&dropout, bidirectional, type);
+        }
+
+        void setId(uint64_t p_id) {
+            Pagoda::GeneralDefinitions::GeneralObject::setId(p_id);
+            uint64_t input = this->m_moduleParams[0],
+                        hidden = this->m_moduleParams[1],
+                        layers = this->m_moduleParams[2],
+                        bidirectional = this->m_moduleParams[4],
+                        type = this->m_moduleParams[5];
+            double dropout = *(double*)&this->m_moduleParams[3];
             switch(type) {
-                case 1:
+                case 0:
                     this->m_rnn = register_module(std::to_string(this->m_id), torch::nn::RNN(torch::nn::RNNOptions(input, hidden).num_layers(layers).dropout(dropout).bidirectional(bidirectional)));
                     break;
-                case 2:
+                case 1:
                     this->m_gru = register_module(std::to_string(this->m_id), torch::nn::GRU(torch::nn::GRUOptions(input, hidden).num_layers(layers).dropout(dropout).bidirectional(bidirectional)));
                     break;
-                case 3:
+                case 2:
                     this->m_lstm = register_module(std::to_string(this->m_id), torch::nn::LSTM(torch::nn::LSTMOptions(input, hidden).num_layers(layers).dropout(dropout).bidirectional(bidirectional)));
                     break;
                 default:
                     break;
             }
-            this->setId(4);
-            this->setModuleParams(6, input, hidden, layers, *(uint64_t*)&dropout, bidirectional, type);
         }
 
-        void replaceModule(uint64_t input = 1, uint64_t hidden = 1, uint64_t layers = 1, double dropout = 0, uint8_t bidirectional = 0, uint8_t type = 1) {
+        void replaceModule(uint64_t input = 1, uint64_t hidden = 1, uint64_t layers = 1, double dropout = 0, uint64_t bidirectional = 0, uint64_t type = 0) {
             this->m_rnn = torch::nn::RNN{nullptr};
             this->m_gru = torch::nn::GRU{nullptr};
             this->m_lstm = torch::nn::LSTM{nullptr};
             switch(type) {
-                case 1:
+                case 0:
                     this->m_rnn = replace_module(std::to_string(this->m_id), torch::nn::RNN(torch::nn::RNNOptions(input, hidden).num_layers(layers).dropout(dropout).bidirectional(bidirectional)));
                     break;
-                case 2:
+                case 1:
                     this->m_gru = replace_module(std::to_string(this->m_id), torch::nn::GRU(torch::nn::GRUOptions(input, hidden).num_layers(layers).dropout(dropout).bidirectional(bidirectional)));
                     break;
-                case 3:
+                case 2:
                     this->m_lstm = replace_module(std::to_string(this->m_id), torch::nn::LSTM(torch::nn::LSTMOptions(input, hidden).num_layers(layers).dropout(dropout).bidirectional(bidirectional)));
                     break;
                 default:
                     break;
             }
-            this->setId(4);
             this->setModuleParams(6, input, hidden, layers, *(uint64_t*)&dropout, bidirectional, type);
         }
 
@@ -236,14 +259,21 @@ namespace ModuleDefinitions {
         torch::nn::Transformer m_transformer{nullptr};
     public:
         TransformerModule(uint64_t inputs = 1, uint64_t heads = 1, uint64_t encoderLayers = 1, uint64_t decoderLayers = 1) {
-            this->m_transformer = register_module(std::to_string(this->m_id), torch::nn::Transformer(torch::nn::TransformerOptions(inputs, heads).num_encoder_layers(encoderLayers).num_decoder_layers(decoderLayers)));
-            this->setId(5);
+            this->m_id = 5;
             this->setModuleParams(4, inputs, heads, encoderLayers, decoderLayers);
+        }
+
+        void setId(uint64_t p_id) {
+            Pagoda::GeneralDefinitions::GeneralObject::setId(p_id);
+            uint64_t inputs = this->m_moduleParams[0],
+                        heads =this->m_moduleParams[1],
+                        encoderLayers = this->m_moduleParams[2],
+                        decoderLayers = this->m_moduleParams[3]; 
+            this->m_transformer = register_module(std::to_string(this->m_id), torch::nn::Transformer(torch::nn::TransformerOptions(inputs, heads).num_encoder_layers(encoderLayers).num_decoder_layers(decoderLayers)));
         }
 
         void replaceModule(uint64_t inputs = 1, uint64_t heads = 1, uint64_t encoderLayers = 1, uint64_t decoderLayers = 1) {
             this->m_transformer = replace_module(std::to_string(this->m_id), torch::nn::Transformer(torch::nn::TransformerOptions(inputs, heads).num_encoder_layers(encoderLayers).num_decoder_layers(decoderLayers)));
-            this->setId(5);
             this->setModuleParams(4, inputs, heads, encoderLayers, decoderLayers);
         }
 
@@ -272,64 +302,76 @@ namespace ModuleDefinitions {
         torch::nn::AdaptiveAvgPool2d m_adaptiveAvgPool2d{nullptr};
         torch::nn::AdaptiveAvgPool3d m_adaptiveAvgPool3d{nullptr};
     public:
-        PoolingModule(uint64_t x, uint64_t y, uint64_t z, uint64_t strideX, uint64_t strideY, uint64_t strideZ, uint64_t norm, uint8_t type) {
+        PoolingModule(uint64_t x, uint64_t y, uint64_t z, uint64_t strideX, uint64_t strideY, uint64_t strideZ, uint64_t norm, uint64_t type) {
+            this->m_id = 6;
+            this->setModuleParams(8, x, y, z, strideX, strideY, strideZ, norm, type);
+        }
+
+        void setId(uint64_t p_id) {
+            Pagoda::GeneralDefinitions::GeneralObject::setId(p_id);
+            uint64_t x = this->m_moduleParams[0],
+                        y = this->m_moduleParams[1],
+                        z = this->m_moduleParams[2],
+                        strideX = this->m_moduleParams[3],
+                        strideY = this->m_moduleParams[4],
+                        strideZ = this->m_moduleParams[5],
+                        norm = this->m_moduleParams[6],
+                        type = this->m_moduleParams[7];
             switch(type) {
-                case 1:
+                case 0:
                     this->m_maxPool1d = register_module(std::to_string(this->m_id), torch::nn::MaxPool1d(torch::nn::MaxPool1dOptions(x).stride(strideX)));
                     break;
-                case 2:
+                case 1:
                     this->m_maxPool2d = register_module(std::to_string(this->m_id), torch::nn::MaxPool2d(torch::nn::MaxPool2dOptions({static_cast<int64_t>(x),static_cast<int64_t>(y)}).stride({static_cast<int64_t>(strideX),static_cast<int64_t>(strideY)})));
                     break;
-                case 3:
+                case 2:
                     this->m_maxPool3d = register_module(std::to_string(this->m_id), torch::nn::MaxPool3d(torch::nn::MaxPool3dOptions({static_cast<int64_t>(x),static_cast<int64_t>(y),static_cast<int64_t>(z)}).stride({static_cast<int64_t>(strideX),static_cast<int64_t>(strideY),static_cast<int64_t>(strideZ)})));
                     break;
-                case 4:
+                case 3:
                     this->m_avgPool1d = register_module(std::to_string(this->m_id), torch::nn::AvgPool1d(torch::nn::AvgPool1dOptions(x).stride(strideX)));
                     break;
-                case 5:
+                case 4:
                     this->m_avgPool2d = register_module(std::to_string(this->m_id), torch::nn::AvgPool2d(torch::nn::AvgPool2dOptions({static_cast<int64_t>(x),static_cast<int64_t>(y)}).stride({static_cast<int64_t>(strideX),static_cast<int64_t>(strideY)})));
                     break;
-                case 6:
+                case 5:
                     this->m_avgPool3d = register_module(std::to_string(this->m_id), torch::nn::AvgPool3d(torch::nn::AvgPool3dOptions({static_cast<int64_t>(x),static_cast<int64_t>(y),static_cast<int64_t>(z)}).stride({static_cast<int64_t>(strideX),static_cast<int64_t>(strideY),static_cast<int64_t>(strideZ)})));
                     break;
-                case 7:
+                case 6:
                     this->m_fractionalMaxPool2d = register_module(std::to_string(this->m_id), torch::nn::FractionalMaxPool2d(torch::nn::FractionalMaxPool2dOptions({static_cast<int64_t>(x),static_cast<int64_t>(y)})));
                     break;
-                case 8:
+                case 7:
                     this->m_fractionalMaxPool3d = register_module(std::to_string(this->m_id), torch::nn::FractionalMaxPool3d(torch::nn::FractionalMaxPool3dOptions({static_cast<int64_t>(x),static_cast<int64_t>(y),static_cast<int64_t>(z)})));
                     break;
-                case 9:
+                case 8:
                     this->m_lpPool1d = register_module(std::to_string(this->m_id), torch::nn::LPPool1d(torch::nn::LPPool1dOptions(norm, x).stride(strideX)));
                     break;
-                case 10:
+                case 9:
                     this->m_lpPool2d = register_module(std::to_string(this->m_id), torch::nn::LPPool2d(torch::nn::LPPool2dOptions(norm, {static_cast<int64_t>(x), static_cast<int64_t>(y)}).stride({static_cast<int64_t>(strideX), static_cast<int64_t>(strideY)})));
                     break;
-                case 11:
+                case 10:
                     this->m_adaptiveMaxPool1d = register_module(std::to_string(this->m_id), torch::nn::AdaptiveMaxPool1d(torch::nn::AdaptiveMaxPool1dOptions(x)));
                     break;
-                case 12:
+                case 11:
                     this->m_adaptiveMaxPool2d = register_module(std::to_string(this->m_id), torch::nn::AdaptiveMaxPool2d(torch::nn::AdaptiveMaxPool2dOptions({static_cast<int64_t>(x), static_cast<int64_t>(y)})));
                     break;
-                case 13:
+                case 12:
                     this->m_adaptiveMaxPool3d = register_module(std::to_string(this->m_id), torch::nn::AdaptiveMaxPool3d(torch::nn::AdaptiveMaxPool3dOptions({static_cast<int64_t>(x), static_cast<int64_t>(y), static_cast<int64_t>(z)})));
                     break;
-                case 14:
+                case 13:
                     this->m_adaptiveAvgPool1d = register_module(std::to_string(this->m_id), torch::nn::AdaptiveAvgPool1d(torch::nn::AdaptiveAvgPool1dOptions(x)));
                     break;
-                case 15:
+                case 14:
                     this->m_adaptiveAvgPool2d = register_module(std::to_string(this->m_id), torch::nn::AdaptiveAvgPool2d(torch::nn::AdaptiveAvgPool2dOptions({static_cast<int64_t>(x), static_cast<int64_t>(y)})));
                     break;
-                case 16:
+                case 15:
                     this->m_adaptiveAvgPool3d = register_module(std::to_string(this->m_id), torch::nn::AdaptiveAvgPool3d(torch::nn::AdaptiveAvgPool3dOptions({static_cast<int64_t>(x), static_cast<int64_t>(y), static_cast<int64_t>(z)})));
                     break;
                 default:
                     break;
             }
-            this->setId(6);
-            this->setModuleParams(8, x, y, z, strideX, strideY, strideZ, norm, type);
         }
 
-        void replaceModule(uint64_t x, uint64_t y, uint64_t z, uint64_t strideX, uint64_t strideY, uint64_t strideZ, uint64_t norm, uint8_t type) {
+        void replaceModule(uint64_t x, uint64_t y, uint64_t z, uint64_t strideX, uint64_t strideY, uint64_t strideZ, uint64_t norm, uint64_t type) {
             this->m_maxPool1d = torch::nn::MaxPool1d{nullptr};
             this->m_maxPool2d = torch::nn::MaxPool2d{nullptr};
             this->m_maxPool3d = torch::nn::MaxPool3d{nullptr};
@@ -348,58 +390,57 @@ namespace ModuleDefinitions {
             this->m_adaptiveAvgPool3d = torch::nn::AdaptiveAvgPool3d{nullptr};
 
             switch(type) {
-                case 1:
+                case 0:
                     this->m_maxPool1d = replace_module(std::to_string(this->m_id), torch::nn::MaxPool1d(torch::nn::MaxPool1dOptions(x).stride(strideX)));
                     break;
-                case 2:
+                case 1:
                     this->m_maxPool2d = replace_module(std::to_string(this->m_id), torch::nn::MaxPool2d(torch::nn::MaxPool2dOptions({static_cast<int64_t>(x),static_cast<int64_t>(y)}).stride({static_cast<int64_t>(strideX),static_cast<int64_t>(strideY)})));
                     break;
-                case 3:
+                case 2:
                     this->m_maxPool3d = replace_module(std::to_string(this->m_id), torch::nn::MaxPool3d(torch::nn::MaxPool3dOptions({static_cast<int64_t>(x),static_cast<int64_t>(y),static_cast<int64_t>(z)}).stride({static_cast<int64_t>(strideX),static_cast<int64_t>(strideY),static_cast<int64_t>(strideZ)})));
                     break;
-                case 4:
+                case 3:
                     this->m_avgPool1d = replace_module(std::to_string(this->m_id), torch::nn::AvgPool1d(torch::nn::AvgPool1dOptions(x).stride(strideX)));
                     break;
-                case 5:
+                case 4:
                     this->m_avgPool2d = replace_module(std::to_string(this->m_id), torch::nn::AvgPool2d(torch::nn::AvgPool2dOptions({static_cast<int64_t>(x),static_cast<int64_t>(y)}).stride({static_cast<int64_t>(strideX),static_cast<int64_t>(strideY)})));
                     break;
-                case 6:
+                case 5:
                     this->m_avgPool3d = replace_module(std::to_string(this->m_id), torch::nn::AvgPool3d(torch::nn::AvgPool3dOptions({static_cast<int64_t>(x),static_cast<int64_t>(y),static_cast<int64_t>(z)}).stride({static_cast<int64_t>(strideX),static_cast<int64_t>(strideY),static_cast<int64_t>(strideZ)})));
                     break;
-                case 7:
+                case 6:
                     this->m_fractionalMaxPool2d = replace_module(std::to_string(this->m_id), torch::nn::FractionalMaxPool2d(torch::nn::FractionalMaxPool2dOptions({static_cast<int64_t>(x),static_cast<int64_t>(y)})));
                     break;
-                case 8:
+                case 7:
                     this->m_fractionalMaxPool3d = replace_module(std::to_string(this->m_id), torch::nn::FractionalMaxPool3d(torch::nn::FractionalMaxPool3dOptions({static_cast<int64_t>(x),static_cast<int64_t>(y),static_cast<int64_t>(z)})));
                     break;
-                case 9:
+                case 8:
                     this->m_lpPool1d = replace_module(std::to_string(this->m_id), torch::nn::LPPool1d(torch::nn::LPPool1dOptions(norm, x).stride(strideX)));
                     break;
-                case 10:
+                case 9:
                     this->m_lpPool2d = replace_module(std::to_string(this->m_id), torch::nn::LPPool2d(torch::nn::LPPool2dOptions(norm, {static_cast<int64_t>(x), static_cast<int64_t>(y)}).stride({static_cast<int64_t>(strideX), static_cast<int64_t>(strideY)})));
                     break;
-                case 11:
+                case 10:
                     this->m_adaptiveMaxPool1d = replace_module(std::to_string(this->m_id), torch::nn::AdaptiveMaxPool1d(torch::nn::AdaptiveMaxPool1dOptions(x)));
                     break;
-                case 12:
+                case 11:
                     this->m_adaptiveMaxPool2d = replace_module(std::to_string(this->m_id), torch::nn::AdaptiveMaxPool2d(torch::nn::AdaptiveMaxPool2dOptions({static_cast<int64_t>(x), static_cast<int64_t>(y)})));
                     break;
-                case 13:
+                case 12:
                     this->m_adaptiveMaxPool3d = replace_module(std::to_string(this->m_id), torch::nn::AdaptiveMaxPool3d(torch::nn::AdaptiveMaxPool3dOptions({static_cast<int64_t>(x), static_cast<int64_t>(y), static_cast<int64_t>(z)})));
                     break;
-                case 14:
+                case 13:
                     this->m_adaptiveAvgPool1d = replace_module(std::to_string(this->m_id), torch::nn::AdaptiveAvgPool1d(torch::nn::AdaptiveAvgPool1dOptions(x)));
                     break;
-                case 15:
+                case 14:
                     this->m_adaptiveAvgPool2d = replace_module(std::to_string(this->m_id), torch::nn::AdaptiveAvgPool2d(torch::nn::AdaptiveAvgPool2dOptions({static_cast<int64_t>(x), static_cast<int64_t>(y)})));
                     break;
-                case 16:
+                case 15:
                     this->m_adaptiveAvgPool3d = replace_module(std::to_string(this->m_id), torch::nn::AdaptiveAvgPool3d(torch::nn::AdaptiveAvgPool3dOptions({static_cast<int64_t>(x), static_cast<int64_t>(y), static_cast<int64_t>(z)})));
                     break;
                 default:
                     break;
             }
-            this->setId(6);
             this->setModuleParams(8, x, y, z, strideX, strideY, strideZ, norm, type);
         }
 
@@ -454,46 +495,58 @@ namespace ModuleDefinitions {
         torch::nn::ConstantPad2d m_constantPad2d{nullptr};
         torch::nn::ConstantPad3d m_constantPad3d{nullptr};
     public:
-        PaddingModule(uint64_t p1 = 1, uint64_t p2 = 1, uint64_t p3 = 1, uint64_t p4 = 1, uint64_t p5 = 1, uint64_t p6 = 1, double p7 = 0.0, uint8_t type = 1) {
+        PaddingModule(uint64_t p1 = 1, uint64_t p2 = 1, uint64_t p3 = 1, uint64_t p4 = 1, uint64_t p5 = 1, uint64_t p6 = 1, double p7 = 0.0, uint64_t type = 0) {
+            this->m_id = 7;
+            this->setModuleParams(8, p1, p2, p3, p4, p5, p6, *(uint64_t*)&p7, type);
+        }
+
+        void setId(uint64_t p_id) {
+            Pagoda::GeneralDefinitions::GeneralObject::setId(p_id);
+            uint64_t p1 = this->m_moduleParams[0],
+                        p2 = this->m_moduleParams[1],
+                        p3 = this->m_moduleParams[2],
+                        p4 = this->m_moduleParams[3],
+                        p5 = this->m_moduleParams[4],
+                        p6 = this->m_moduleParams[5],
+                        type = this->m_moduleParams[7];
+            double p7 = *(double*)&this->m_moduleParams[6];
             switch(type) {
-                case 1:
+                case 0:
                     this->m_reflectionPad1d = register_module(std::to_string(this->m_id), torch::nn::ReflectionPad1d(torch::nn::ReflectionPad1dOptions({static_cast<int64_t>(p1), static_cast<int64_t>(p2)})));
                     break;
-                case 2:
+                case 1:
                     this->m_reflectionPad2d = register_module(std::to_string(this->m_id), torch::nn::ReflectionPad2d(torch::nn::ReflectionPad2dOptions({static_cast<int64_t>(p1), static_cast<int64_t>(p2), static_cast<int64_t>(p3), static_cast<int64_t>(p4)})));
                     break;
-                case 3:
+                case 2:
                     this->m_reflectionPad3d = register_module(std::to_string(this->m_id), torch::nn::ReflectionPad3d(torch::nn::ReflectionPad3dOptions({static_cast<int64_t>(p1), static_cast<int64_t>(p2), static_cast<int64_t>(p3), static_cast<int64_t>(p4), static_cast<int64_t>(p5), static_cast<int64_t>(p6)})));
                     break;
-                case 4:
+                case 3:
                     this->m_replicationPad1d = register_module(std::to_string(this->m_id), torch::nn::ReplicationPad1d(torch::nn::ReplicationPad1dOptions({static_cast<int64_t>(p1), static_cast<int64_t>(p2)})));
                     break;
-                case 5:
+                case 4:
                     this->m_replicationPad2d = register_module(std::to_string(this->m_id), torch::nn::ReplicationPad2d(torch::nn::ReplicationPad2dOptions({static_cast<int64_t>(p1), static_cast<int64_t>(p2), static_cast<int64_t>(p3), static_cast<int64_t>(p4)})));
                     break;
-                case 6:
+                case 5:
                     this->m_replicationPad3d = register_module(std::to_string(this->m_id), torch::nn::ReplicationPad3d(torch::nn::ReplicationPad3dOptions({static_cast<int64_t>(p1), static_cast<int64_t>(p2), static_cast<int64_t>(p3), static_cast<int64_t>(p4), static_cast<int64_t>(p5), static_cast<int64_t>(p6)})));
                     break;
-                case 7:
+                case 6:
                     this->m_zeroPad2d = register_module(std::to_string(this->m_id), torch::nn::ZeroPad2d(torch::nn::ZeroPad2dOptions({static_cast<int64_t>(p1), static_cast<int64_t>(p2), static_cast<int64_t>(p3), static_cast<int64_t>(p4)})));
                     break;
-                case 8:
+                case 7:
                     this->m_constantPad1d = register_module(std::to_string(this->m_id), torch::nn::ConstantPad1d(torch::nn::ConstantPad1dOptions({static_cast<int64_t>(p1), static_cast<int64_t>(p2)}, p7)));
                     break;
-                case 9:
+                case 8:
                     this->m_constantPad2d = register_module(std::to_string(this->m_id), torch::nn::ConstantPad2d(torch::nn::ConstantPad2dOptions({static_cast<int64_t>(p1), static_cast<int64_t>(p2), static_cast<int64_t>(p3), static_cast<int64_t>(p4)}, p7)));
                     break;
-                case 10:
+                case 9:
                     this->m_constantPad3d = register_module(std::to_string(this->m_id), torch::nn::ConstantPad3d(torch::nn::ConstantPad3dOptions({static_cast<int64_t>(p1), static_cast<int64_t>(p2), static_cast<int64_t>(p3), static_cast<int64_t>(p4), static_cast<int64_t>(p5), static_cast<int64_t>(p6)}, p7)));
                     break;
                 default:
                     break;    
             }
-            this->setId(7);
-            this->setModuleParams(8, p1, p2, p3, p4, p5, p6, *(uint64_t*)&p7, type);
         }
 
-        void replaceModule(uint64_t p1 = 1, uint64_t p2 = 1, uint64_t p3 = 1, uint64_t p4 = 1, uint64_t p5 = 1, uint64_t p6 = 1, double p7 = 0.0, uint8_t type = 1) {
+        void replaceModule(uint64_t p1 = 1, uint64_t p2 = 1, uint64_t p3 = 1, uint64_t p4 = 1, uint64_t p5 = 1, uint64_t p6 = 1, double p7 = 0.0, uint64_t type = 0) {
             this->m_reflectionPad1d = torch::nn::ReflectionPad1d{nullptr};
             this->m_reflectionPad2d = torch::nn::ReflectionPad2d{nullptr};
             this->m_reflectionPad3d = torch::nn::ReflectionPad3d{nullptr};
@@ -505,40 +558,39 @@ namespace ModuleDefinitions {
             this->m_constantPad2d = torch::nn::ConstantPad2d{nullptr};
             this->m_constantPad3d = torch::nn::ConstantPad3d{nullptr};
             switch(type) {
-                case 1:
+                case 0:
                     this->m_reflectionPad1d = replace_module(std::to_string(this->m_id), torch::nn::ReflectionPad1d(torch::nn::ReflectionPad1dOptions({static_cast<int64_t>(p1), static_cast<int64_t>(p2)})));
                     break;
-                case 2:
+                case 1:
                     this->m_reflectionPad2d = replace_module(std::to_string(this->m_id), torch::nn::ReflectionPad2d(torch::nn::ReflectionPad2dOptions({static_cast<int64_t>(p1), static_cast<int64_t>(p2), static_cast<int64_t>(p3), static_cast<int64_t>(p4)})));
                     break;
-                case 3:
+                case 2:
                     this->m_reflectionPad3d = replace_module(std::to_string(this->m_id), torch::nn::ReflectionPad3d(torch::nn::ReflectionPad3dOptions({static_cast<int64_t>(p1), static_cast<int64_t>(p2), static_cast<int64_t>(p3), static_cast<int64_t>(p4), static_cast<int64_t>(p5), static_cast<int64_t>(p6)})));
                     break;
-                case 4:
+                case 3:
                     this->m_replicationPad1d = replace_module(std::to_string(this->m_id), torch::nn::ReplicationPad1d(torch::nn::ReplicationPad1dOptions({static_cast<int64_t>(p1), static_cast<int64_t>(p2)})));
                     break;
-                case 5:
+                case 4:
                     this->m_replicationPad2d = replace_module(std::to_string(this->m_id), torch::nn::ReplicationPad2d(torch::nn::ReplicationPad2dOptions({static_cast<int64_t>(p1), static_cast<int64_t>(p2), static_cast<int64_t>(p3), static_cast<int64_t>(p4)})));
                     break;
-                case 6:
+                case 5:
                     this->m_replicationPad3d = replace_module(std::to_string(this->m_id), torch::nn::ReplicationPad3d(torch::nn::ReplicationPad3dOptions({static_cast<int64_t>(p1), static_cast<int64_t>(p2), static_cast<int64_t>(p3), static_cast<int64_t>(p4), static_cast<int64_t>(p5), static_cast<int64_t>(p6)})));
                     break;
-                case 7:
+                case 6:
                     this->m_zeroPad2d = replace_module(std::to_string(this->m_id), torch::nn::ZeroPad2d(torch::nn::ZeroPad2dOptions({static_cast<int64_t>(p1), static_cast<int64_t>(p2), static_cast<int64_t>(p3), static_cast<int64_t>(p4)})));
                     break;
-                case 8:
+                case 7:
                     this->m_constantPad1d = replace_module(std::to_string(this->m_id), torch::nn::ConstantPad1d(torch::nn::ConstantPad1dOptions({static_cast<int64_t>(p1), static_cast<int64_t>(p2)}, p7)));
                     break;
-                case 9:
+                case 8:
                     this->m_constantPad2d = replace_module(std::to_string(this->m_id), torch::nn::ConstantPad2d(torch::nn::ConstantPad2dOptions({static_cast<int64_t>(p1), static_cast<int64_t>(p2), static_cast<int64_t>(p3), static_cast<int64_t>(p4)}, p7)));
                     break;
-                case 10:
+                case 9:
                     this->m_constantPad3d = replace_module(std::to_string(this->m_id), torch::nn::ConstantPad3d(torch::nn::ConstantPad3dOptions({static_cast<int64_t>(p1), static_cast<int64_t>(p2), static_cast<int64_t>(p3), static_cast<int64_t>(p4), static_cast<int64_t>(p5), static_cast<int64_t>(p6)}, p7)));
                     break;
                 default:
                     break;    
             }
-            this->setId(7);
             this->setModuleParams(8, p1, p2, p3, p4, p5, p6, *(uint64_t*)&p7, type);
         }
 
@@ -580,43 +632,54 @@ namespace ModuleDefinitions {
         torch::nn::LayerNorm m_layerNorm{nullptr};
         torch::nn::LocalResponseNorm m_localResponseNorm{nullptr};
     public:
-        NormalizationModule(uint64_t numFeatures1 = 1, uint64_t numFeatures2 = 1, double epsilon = 0.00005, double momentum = 0.1, double alpha = 0.0001, double beta = 0.75, uint8_t type = 1) {
+        NormalizationModule(uint64_t numFeatures1 = 1, uint64_t numFeatures2 = 1, double epsilon = 0.00005, double momentum = 0.1, double alpha = 0.0001, double beta = 0.75, uint64_t type = 0) {
+            this->m_id = 8;
+            this->setModuleParams(7, numFeatures1, numFeatures2, *(uint64_t*)&epsilon, *(uint64_t*)&momentum, *(uint64_t*)&alpha, *(uint64_t*)&beta, type);
+        }
+
+        void setId(uint64_t p_id) {
+            Pagoda::GeneralDefinitions::GeneralObject::setId(p_id);
+            uint64_t numFeatures1 = this->m_moduleParams[0],
+                        numFeatures2 = this->m_moduleParams[1],
+                        type = this->m_moduleParams[6];
+            double epsilon = *(double*)&this->m_moduleParams[2],
+                    momentum = *(double*)&this->m_moduleParams[3],
+                    alpha = *(double*)&this->m_moduleParams[4],
+                    beta = *(double*)&this->m_moduleParams[5];
             switch(type) {
-                case 1:
+                case 0:
                     this->m_batchNorm1d = register_module(std::to_string(this->m_id), torch::nn::BatchNorm1d(torch::nn::BatchNorm1dOptions(static_cast<int64_t>(numFeatures1)).eps(epsilon).momentum(momentum)));
                     break;
-                case 2:
+                case 1:
                     this->m_batchNorm2d = register_module(std::to_string(this->m_id), torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(static_cast<int64_t>(numFeatures1)).eps(epsilon).momentum(momentum)));
                     break;
-                case 3:
+                case 2:
                     this->m_batchNorm3d = register_module(std::to_string(this->m_id), torch::nn::BatchNorm3d(torch::nn::BatchNorm3dOptions(static_cast<int64_t>(numFeatures1)).eps(epsilon).momentum(momentum)));
                     break;
-                case 4:
+                case 3:
                     this->m_groupNorm = register_module(std::to_string(this->m_id), torch::nn::GroupNorm(torch::nn::GroupNormOptions(static_cast<int64_t>(numFeatures1), static_cast<int64_t>(numFeatures2)).eps(epsilon)));
                     break;
-                case 5:
+                case 4:
                     this->m_instanceNorm1d = register_module(std::to_string(this->m_id), torch::nn::InstanceNorm1d(torch::nn::InstanceNorm1dOptions(static_cast<int64_t>(numFeatures1)).eps(epsilon).momentum(momentum)));
                     break;
-                case 6:
+                case 5:
                     this->m_instanceNorm2d = register_module(std::to_string(this->m_id), torch::nn::InstanceNorm2d(torch::nn::InstanceNorm2dOptions(static_cast<int64_t>(numFeatures1)).eps(epsilon).momentum(momentum)));
                     break;
-                case 7:
+                case 6:
                     this->m_instanceNorm3d = register_module(std::to_string(this->m_id), torch::nn::InstanceNorm3d(torch::nn::InstanceNorm3dOptions(static_cast<int64_t>(numFeatures1)).eps(epsilon).momentum(momentum)));
                     break;
-                case 8:
+                case 7:
                     this->m_layerNorm = register_module(std::to_string(this->m_id), torch::nn::LayerNorm(torch::nn::LayerNormOptions({static_cast<int64_t>(numFeatures1), static_cast<int64_t>(numFeatures2)}).eps(epsilon)));
                     break;
-                case 9:
+                case 8:
                     this->m_localResponseNorm = register_module(std::to_string(this->m_id), torch::nn::LocalResponseNorm(torch::nn::LocalResponseNormOptions(static_cast<int64_t>(numFeatures1)).alpha(alpha).beta(beta)));
                     break;
                 default:
                     break;
             }
-            this->setId(8);
-            this->setModuleParams(7, numFeatures1, numFeatures2, *(uint64_t*)&epsilon, *(uint64_t*)&momentum, *(uint64_t*)&alpha, *(uint64_t*)&beta, type);
         }
 
-        void replaceModule(uint64_t numFeatures1 = 1, uint64_t numFeatures2 = 1, double epsilon = 0.00005, double momentum = 0.1, double alpha = 0.0001, double beta = 0.75, uint8_t type = 1) {
+        void replaceModule(uint64_t numFeatures1 = 1, uint64_t numFeatures2 = 1, double epsilon = 0.00005, double momentum = 0.1, double alpha = 0.0001, double beta = 0.75, uint64_t type = 0) {
             this->m_batchNorm1d = torch::nn::BatchNorm1d{nullptr};
             this->m_batchNorm2d = torch::nn::BatchNorm2d{nullptr};
             this->m_batchNorm3d = torch::nn::BatchNorm3d{nullptr};
@@ -627,37 +690,36 @@ namespace ModuleDefinitions {
             this->m_layerNorm = torch::nn::LayerNorm{nullptr};
             this->m_localResponseNorm = torch::nn::LocalResponseNorm{nullptr};
             switch(type) {
-                case 1:
+                case 0:
                     this->m_batchNorm1d = replace_module(std::to_string(this->m_id), torch::nn::BatchNorm1d(torch::nn::BatchNorm1dOptions(static_cast<int64_t>(numFeatures1)).eps(epsilon).momentum(momentum)));
                     break;
-                case 2:
+                case 1:
                     this->m_batchNorm2d = replace_module(std::to_string(this->m_id), torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(static_cast<int64_t>(numFeatures1)).eps(epsilon).momentum(momentum)));
                     break;
-                case 3:
+                case 2:
                     this->m_batchNorm3d = replace_module(std::to_string(this->m_id), torch::nn::BatchNorm3d(torch::nn::BatchNorm3dOptions(static_cast<int64_t>(numFeatures1)).eps(epsilon).momentum(momentum)));
                     break;
-                case 4:
+                case 3:
                     this->m_groupNorm = replace_module(std::to_string(this->m_id), torch::nn::GroupNorm(torch::nn::GroupNormOptions(static_cast<int64_t>(numFeatures1), static_cast<int64_t>(numFeatures2)).eps(epsilon)));
                     break;
-                case 5:
+                case 4:
                     this->m_instanceNorm1d = replace_module(std::to_string(this->m_id), torch::nn::InstanceNorm1d(torch::nn::InstanceNorm1dOptions(static_cast<int64_t>(numFeatures1)).eps(epsilon).momentum(momentum)));
                     break;
-                case 6:
+                case 5:
                     this->m_instanceNorm2d = replace_module(std::to_string(this->m_id), torch::nn::InstanceNorm2d(torch::nn::InstanceNorm2dOptions(static_cast<int64_t>(numFeatures1)).eps(epsilon).momentum(momentum)));
                     break;
-                case 7:
+                case 6:
                     this->m_instanceNorm3d = replace_module(std::to_string(this->m_id), torch::nn::InstanceNorm3d(torch::nn::InstanceNorm3dOptions(static_cast<int64_t>(numFeatures1)).eps(epsilon).momentum(momentum)));
                     break;
-                case 8:
+                case 7:
                     this->m_layerNorm = replace_module(std::to_string(this->m_id), torch::nn::LayerNorm(torch::nn::LayerNormOptions({static_cast<int64_t>(numFeatures1), static_cast<int64_t>(numFeatures2)}).eps(epsilon)));
                     break;
-                case 9:
+                case 8:
                     this->m_localResponseNorm = replace_module(std::to_string(this->m_id), torch::nn::LocalResponseNorm(torch::nn::LocalResponseNormOptions(static_cast<int64_t>(numFeatures1)).alpha(alpha).beta(beta)));
                     break;
                 default:
                     break;
             }
-            this->setId(8);
             this->setModuleParams(7, numFeatures1, numFeatures2, *(uint64_t*)&epsilon, *(uint64_t*)&momentum, *(uint64_t*)&alpha, *(uint64_t*)&beta, type);
         }
 
@@ -693,56 +755,61 @@ namespace ModuleDefinitions {
         torch::nn::AlphaDropout m_alphaDropout{nullptr};
         torch::nn::FeatureAlphaDropout m_featureAlphaDropout{nullptr};
     public:
-        DropoutModule(double p = 0.5, uint8_t type = 1) {
+        DropoutModule(double p = 0.5, uint64_t type = 0) {
+            this->m_id = 9;
+            this->setModuleParams(2, *(uint64_t*)&p, type);
+        }
+
+        void setId(uint64_t p_id) {
+            Pagoda::GeneralDefinitions::GeneralObject::setId(p_id);
+            uint64_t type = this->m_moduleParams[1];
+            double p = *(double*)&this->m_moduleParams[0];
             switch(type) {
-                case 1:
+                case 0:
                     this->m_dropout = register_module(std::to_string(this->m_id), torch::nn::Dropout(torch::nn::DropoutOptions().p(p).inplace(true)));
                     break;
-                case 2:
+                case 1:
                     this->m_dropout2d = register_module(std::to_string(this->m_id), torch::nn::Dropout2d(torch::nn::Dropout2dOptions().p(p).inplace(true)));
                     break;
-                case 3:
+                case 2:
                     this->m_dropout3d = register_module(std::to_string(this->m_id), torch::nn::Dropout3d(torch::nn::Dropout3dOptions().p(p).inplace(true)));
                     break;
-                case 4:
+                case 3:
                     this->m_alphaDropout = register_module(std::to_string(this->m_id), torch::nn::AlphaDropout(torch::nn::AlphaDropoutOptions().p(p).inplace(true)));
                     break;
-                case 5:
+                case 4:
                     this->m_featureAlphaDropout = register_module(std::to_string(this->m_id), torch::nn::FeatureAlphaDropout(torch::nn::FeatureAlphaDropoutOptions().p(p).inplace(true)));
                     break;
                 default:
                     break;
             }
-            this->setId(9);
-            this->setModuleParams(2, *(uint64_t*)&p, type);
         }
 
-        void replaceModule(double p = 0.5, uint8_t type = 1) {
+        void replaceModule(double p = 0.5, uint64_t type = 0) {
             this->m_dropout = torch::nn::Dropout{nullptr};
             this->m_dropout2d = torch::nn::Dropout2d{nullptr};
             this->m_dropout3d = torch::nn::Dropout3d{nullptr};
             this->m_alphaDropout = torch::nn::AlphaDropout{nullptr};
             this->m_featureAlphaDropout = torch::nn::FeatureAlphaDropout{nullptr};
             switch(type) {
-                case 1:
+                case 0:
                     this->m_dropout = replace_module(std::to_string(this->m_id), torch::nn::Dropout(torch::nn::DropoutOptions().p(p).inplace(true)));
                     break;
-                case 2:
+                case 1:
                     this->m_dropout2d = replace_module(std::to_string(this->m_id), torch::nn::Dropout2d(torch::nn::Dropout2dOptions().p(p).inplace(true)));
                     break;
-                case 3:
+                case 2:
                     this->m_dropout3d = replace_module(std::to_string(this->m_id), torch::nn::Dropout3d(torch::nn::Dropout3dOptions().p(p).inplace(true)));
                     break;
-                case 4:
+                case 3:
                     this->m_alphaDropout = replace_module(std::to_string(this->m_id), torch::nn::AlphaDropout(torch::nn::AlphaDropoutOptions().p(p).inplace(true)));
                     break;
-                case 5:
+                case 4:
                     this->m_featureAlphaDropout = replace_module(std::to_string(this->m_id), torch::nn::FeatureAlphaDropout(torch::nn::FeatureAlphaDropoutOptions().p(p).inplace(true)));
                     break;
                 default:
                     break;
             }
-            this->setId(9);
             this->setModuleParams(2, *(uint64_t*)&p, type);
         }
 
@@ -791,94 +858,105 @@ namespace ModuleDefinitions {
         torch::nn::Softmax2d m_softmax2d{nullptr};
         torch::nn::LogSoftmax m_logSoftmax{nullptr};
     public:
-        ActivationModule(double param1 = 1.0, double param2 = 1.0, uint64_t param3 = 1, uint64_t param4 = 1, double param5 = 1.0, uint8_t bias = 1, uint8_t type = 1) {
+        ActivationModule(double param1 = 1.0, double param2 = 1.0, uint64_t param3 = 1, uint64_t param4 = 1, double param5 = 1.0, uint64_t bias = 1, uint64_t type = 0) {
+            this->m_id = 10;
+            this->setModuleParams(7, *(uint64_t*)&param1, *(uint64_t*)&param2, param3, param4, *(uint64_t*)&param5, bias, type);
+        }
+
+        void setId(uint64_t p_id) {
+            Pagoda::GeneralDefinitions::GeneralObject::setId(p_id);
+            uint64_t param3 = this->m_moduleParams[2],
+                        param4 = this->m_moduleParams[3],
+                        bias = this->m_moduleParams[5],
+                        type = this->m_moduleParams[6];
+            double param1 = *(double*)&this->m_moduleParams[0],
+                    param2 = *(double*)&this->m_moduleParams[1],
+                    param5 = *(double*)&this->m_moduleParams[4];
             switch(type) {
-                case 1:
+                case 0:
                     this->m_elu = register_module(std::to_string(this->m_id), torch::nn::ELU(torch::nn::ELUOptions().alpha(param1).inplace(true)));
                     break;
-                case 2:
+                case 1:
                     this->m_hardShrink = register_module(std::to_string(this->m_id), torch::nn::Hardshrink(torch::nn::HardshrinkOptions().lambda(param1)));
                     break;
-                case 3:
+                case 2:
                     this->m_hardTanh = register_module(std::to_string(this->m_id), torch::nn::Hardtanh(torch::nn::HardtanhOptions().min_val(param1).max_val(param2).inplace(true)));
                     break;
-                case 4:
+                case 3:
                     this->m_leakyRelu = register_module(std::to_string(this->m_id), torch::nn::LeakyReLU(torch::nn::LeakyReLUOptions().negative_slope(param1).inplace(true)));
                     break;
-                case 5:
+                case 4:
                     this->m_logSigmoid = register_module(std::to_string(this->m_id), torch::nn::LogSigmoid());
                     break;
-                case 6:
+                case 5:
                     this->m_prelu = register_module(std::to_string(this->m_id), torch::nn::PReLU(torch::nn::PReLUOptions().num_parameters(param1)));
                     break;
-                case 7:
+                case 6:
                     this->m_relu = register_module(std::to_string(this->m_id), torch::nn::ReLU(torch::nn::ReLUOptions().inplace(true)));
                     break;
-                case 8:
+                case 7:
                     this->m_relu6 = register_module(std::to_string(this->m_id), torch::nn::ReLU6(torch::nn::ReLU6Options().inplace(true)));
                     break;
-                case 9:
+                case 8:
                     this->m_rrelu = register_module(std::to_string(this->m_id), torch::nn::RReLU(torch::nn::RReLUOptions().lower(param1).upper(param2).inplace(true)));
                     break;
-                case 10:
+                case 9:
                     this->m_selu = register_module(std::to_string(this->m_id), torch::nn::SELU(torch::nn::SELUOptions().inplace(true)));
                     break;
-                case 11:
+                case 10:
                     this->m_celu = register_module(std::to_string(this->m_id), torch::nn::CELU(torch::nn::CELUOptions().alpha(param1).inplace(true)));
                     break;
-                case 12:
+                case 11:
                     this->m_gelu = register_module(std::to_string(this->m_id), torch::nn::GELU());
                     break;
-                case 13:
+                case 12:
                     this->m_sigmoid = register_module(std::to_string(this->m_id), torch::nn::Sigmoid());
                     break;
-                case 14:
+                case 13:
                     this->m_silu = register_module(std::to_string(this->m_id), torch::nn::SiLU());
                     break;
-                case 15:
+                case 14:
                     this->m_mish = register_module(std::to_string(this->m_id), torch::nn::Mish());
                     break;
-                case 16:
+                case 15:
                     this->m_softPlus = register_module(std::to_string(this->m_id), torch::nn::Softplus(torch::nn::SoftplusOptions().beta(param1).threshold(param2)));
                     break;
-                case 17:
+                case 16:
                     this->m_softShrink = register_module(std::to_string(this->m_id), torch::nn::Softshrink(torch::nn::SoftshrinkOptions(param1)));
                     break;
-                case 18:
+                case 17:
                     this->m_softSign = register_module(std::to_string(this->m_id), torch::nn::Softsign());
                     break;
-                case 19:
+                case 18:
                     this->m_tanh = register_module(std::to_string(this->m_id), torch::nn::Tanh());
                     break;
-                case 20:
+                case 19:
                     this->m_tanhShrink = register_module(std::to_string(this->m_id), torch::nn::Tanhshrink());
                     break;
-                case 21:
+                case 20:
                     this->m_threshold = register_module(std::to_string(this->m_id), torch::nn::Threshold(torch::nn::ThresholdOptions(param1, param2).inplace(true)));
                     break;
-                case 22:
+                case 21:
                     this->m_glu = register_module(std::to_string(this->m_id), torch::nn::GLU(torch::nn::GLUOptions(param1)));
                     break;
-                case 23:
+                case 22:
                     this->m_softmin = register_module(std::to_string(this->m_id), torch::nn::Softmin(torch::nn::SoftminOptions(param1)));
                     break;
-                case 24:
+                case 23:
                     this->m_softmax = register_module(std::to_string(this->m_id), torch::nn::Softmax(torch::nn::SoftmaxOptions(param1)));
                     break;
-                case 25:
+                case 24:
                     this->m_softmax2d = register_module(std::to_string(this->m_id), torch::nn::Softmax2d());
                     break;
-                case 26:
+                case 25:
                     this->m_logSoftmax = register_module(std::to_string(this->m_id), torch::nn::LogSoftmax(torch::nn::LogSoftmaxOptions(param1)));
                     break;
                 default:
                     break;
             }
-            this->setId(10);
-            this->setModuleParams(7, *(uint64_t*)&param1, *(uint64_t*)&param2, param3, param4, *(uint64_t*)&param5, bias, type);
         }
 
-        void replaceModule(double param1 = 1.0, double param2 = 1.0, uint64_t param3 = 1, uint64_t param4 = 1, double param5 = 1.0, uint8_t bias = 1, uint8_t type = 1) {
+        void replaceModule(double param1 = 1.0, double param2 = 1.0, uint64_t param3 = 1, uint64_t param4 = 1, double param5 = 1.0, uint64_t bias = 1, uint64_t type = 0) {
             this->m_elu = torch::nn::ELU{nullptr};
             this->m_hardShrink = torch::nn::Hardshrink{nullptr};
             this->m_hardTanh = torch::nn::Hardtanh{nullptr};
@@ -907,88 +985,87 @@ namespace ModuleDefinitions {
             this->m_logSoftmax = torch::nn::LogSoftmax{nullptr};
 
             switch(type) {
-                case 1:
+                case 0:
                     this->m_elu = replace_module(std::to_string(this->m_id), torch::nn::ELU(torch::nn::ELUOptions().alpha(param1).inplace(true)));
                     break;
-                case 2:
+                case 1:
                     this->m_hardShrink = replace_module(std::to_string(this->m_id), torch::nn::Hardshrink(torch::nn::HardshrinkOptions().lambda(param1)));
                     break;
-                case 3:
+                case 2:
                     this->m_hardTanh = replace_module(std::to_string(this->m_id), torch::nn::Hardtanh(torch::nn::HardtanhOptions().min_val(param1).max_val(param2).inplace(true)));
                     break;
-                case 4:
+                case 3:
                     this->m_leakyRelu = replace_module(std::to_string(this->m_id), torch::nn::LeakyReLU(torch::nn::LeakyReLUOptions().negative_slope(param1).inplace(true)));
                     break;
-                case 5:
+                case 4:
                     this->m_logSigmoid = replace_module(std::to_string(this->m_id), torch::nn::LogSigmoid());
                     break;
-                case 6:
+                case 5:
                     this->m_prelu = replace_module(std::to_string(this->m_id), torch::nn::PReLU(torch::nn::PReLUOptions().num_parameters(param1)));
                     break;
-                case 7:
+                case 6:
                     this->m_relu = replace_module(std::to_string(this->m_id), torch::nn::ReLU(torch::nn::ReLUOptions().inplace(true)));
                     break;
-                case 8:
+                case 7:
                     this->m_relu6 = replace_module(std::to_string(this->m_id), torch::nn::ReLU6(torch::nn::ReLU6Options().inplace(true)));
                     break;
-                case 9:
+                case 8:
                     this->m_rrelu = replace_module(std::to_string(this->m_id), torch::nn::RReLU(torch::nn::RReLUOptions().lower(param1).upper(param2).inplace(true)));
                     break;
-                case 10:
+                case 9:
                     this->m_selu = replace_module(std::to_string(this->m_id), torch::nn::SELU(torch::nn::SELUOptions().inplace(true)));
                     break;
-                case 11:
+                case 10:
                     this->m_celu = replace_module(std::to_string(this->m_id), torch::nn::CELU(torch::nn::CELUOptions().alpha(param1).inplace(true)));
                     break;
-                case 12:
+                case 11:
                     this->m_gelu = replace_module(std::to_string(this->m_id), torch::nn::GELU());
                     break;
-                case 13:
+                case 12:
                     this->m_sigmoid = replace_module(std::to_string(this->m_id), torch::nn::Sigmoid());
                     break;
-                case 14:
+                case 13:
                     this->m_silu = replace_module(std::to_string(this->m_id), torch::nn::SiLU());
                     break;
-                case 15:
+                case 14:
                     this->m_mish = replace_module(std::to_string(this->m_id), torch::nn::Mish());
                     break;
-                case 16:
+                case 15:
                     this->m_softPlus = replace_module(std::to_string(this->m_id), torch::nn::Softplus(torch::nn::SoftplusOptions().beta(param1).threshold(param2)));
                     break;
-                case 17:
+                case 16:
                     this->m_softShrink = replace_module(std::to_string(this->m_id), torch::nn::Softshrink(torch::nn::SoftshrinkOptions(param1)));
                     break;
-                case 18:
+                case 17:
                     this->m_softSign = replace_module(std::to_string(this->m_id), torch::nn::Softsign());
                     break;
-                case 19:
+                case 18:
                     this->m_tanh = replace_module(std::to_string(this->m_id), torch::nn::Tanh());
                     break;
-                case 20:
+                case 19:
                     this->m_tanhShrink = replace_module(std::to_string(this->m_id), torch::nn::Tanhshrink());
                     break;
-                case 21:
+                case 20:
                     this->m_threshold = replace_module(std::to_string(this->m_id), torch::nn::Threshold(torch::nn::ThresholdOptions(param1, param2).inplace(true)));
                     break;
-                case 22:
+                case 21:
                     this->m_glu = replace_module(std::to_string(this->m_id), torch::nn::GLU(torch::nn::GLUOptions(param1)));
                     break;
-                case 23:
+                case 22:
                     this->m_softmin = replace_module(std::to_string(this->m_id), torch::nn::Softmin(torch::nn::SoftminOptions(param1)));
                     break;
-                case 24:
+                case 23:
                     this->m_softmax = replace_module(std::to_string(this->m_id), torch::nn::Softmax(torch::nn::SoftmaxOptions(param1)));
                     break;
-                case 25:
+                case 24:
                     this->m_softmax2d = replace_module(std::to_string(this->m_id), torch::nn::Softmax2d());
                     break;
-                case 26:
+                case 25:
                     this->m_logSoftmax = replace_module(std::to_string(this->m_id), torch::nn::LogSoftmax(torch::nn::LogSoftmaxOptions(param1)));
                     break;
                 default:
                     break;
             }
-            this->setId(10);
             this->setModuleParams(7, *(uint64_t*)&param1, *(uint64_t*)&param2, param3, param4, *(uint64_t*)&param5, bias, type);
         }
 

@@ -15,6 +15,7 @@ namespace GeneralDefinitions {
     class GeneralObject : public torch::nn::Module {
     protected:
         uint64_t m_id;
+        uint8_t m_idSet = 0;
         std::vector<uint64_t> m_moduleParams;
         std::unordered_map<uint64_t, torch::Tensor> m_inputs;
         std::set<uint64_t> m_expectedInputs;
@@ -23,8 +24,11 @@ namespace GeneralDefinitions {
             return this->m_id;
         }
 
-        void setId(uint64_t p_id) {
+        virtual void setId(uint64_t p_id) {
+            if(this->m_idSet) 
+                return;
             this->m_id = p_id;
+            this->m_idSet = 1;
         }
 
         void setModuleParams(uint64_t p_argc, ... ) {
@@ -70,7 +74,7 @@ namespace GeneralDefinitions {
             this->m_expectedInputs.erase(p_source);
         }
 
-        virtual torch::Tensor forward() = 0;
+        virtual torch::Tensor forward() = 0; 
         virtual ~GeneralObject() = default;
     }; //class GeneralObject
 

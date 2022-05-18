@@ -27,8 +27,8 @@ namespace CompressionDefintions {
 
     class IntermediateObject {
     private:
-        std::unordered_map<uint64_t, std::vector<uint8_t> > m_byteMap;
         std::unordered_map<uint64_t, uint64_t> m_locationIndex;
+        std::unordered_map<uint64_t, std::vector<uint8_t> > m_byteMap;
     public:
         IntermediateObject() {}
 
@@ -90,7 +90,7 @@ namespace CompressionDefintions {
             std::vector<uint8_t> moduleBytes;
 
             torch::Tensor t = torch::tensor(1);
-
+    
             while(!q.empty()) {
                 currentModule = q.front();
                 q.pop();
@@ -151,31 +151,15 @@ namespace CompressionDefintions {
         }
 
         virtual void decompress(CompressedObject*& p_sourceObject, SourceObject*& p_decompressedObject) {
-
+            
         }
     }; //class GraphCompression
     
-    /*
-
-        1 -> 2,3,4
-        2 -> 3,5
-        3 -> 4
-        4 -> 5
-
-    */
-
     class TensorCompression : public GeneralCompression {
     public:
         virtual void compress(SourceObject*& p_sourceObject, CompressedObject*& p_compressedObject) {
-            Pagoda::GeneralDefinitions::GeneralNet* net = p_sourceObject->getSource();
-            std::vector<float> tenRepresentation;
-            for(auto& module : net->getModules()) {
-                for(auto& ten : module.second->parameters()) {
-                    std::copy(ten.data_ptr<float>(), ten.data_ptr<float>() + ten.numel(), tenRepresentation.begin());
-                    
-                    
-
-                }
+            for(auto& elem : *this->m_intermediateObject->getByteMapPointer()) {
+                
             }
         }
 

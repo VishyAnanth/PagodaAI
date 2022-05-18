@@ -9,10 +9,10 @@
 using namespace torch::nn;
 
 int main() {
-    torch::Tensor ten = torch::rand({3, 2}, torch::TensorOptions(torch::kCPU).dtype(at::kFloat)); 
-    std::vector<float> v(ten.data_ptr<float>(), ten.data_ptr<float>() + ten.numel());
+    // torch::Tensor ten = torch::rand({3, 2}, torch::TensorOptions(torch::kCPU).dtype(at::kFloat)); 
+    // std::vector<float> v(ten.data_ptr<float>(), ten.data_ptr<float>() + ten.numel());
 
-    for (auto a : v) std::cout << a << std::endl;
+    // for (auto a : v) std::cout << a << std::endl;
     // torch::Tensor r1 = torch::randn({232, 232, 232});
     // std::cout << "r1" << std::endl;
     // torch::Tensor r2 = torch::randn({232, 232, 232});
@@ -22,21 +22,18 @@ int main() {
     // torch::Tensor output = trans(r1, r2);
     // std::cout << "out" << std::endl;
 
-    // auto net = std::make_shared<Pagoda::GeneralDefinitions::GeneralNet>();
+    auto net = std::make_shared<Pagoda::GeneralDefinitions::GeneralNet>();
     
-    // auto f = std::make_shared<Pagoda::ModuleDefinitions::FullyConnectedModule>();
+    auto f = std::make_shared<Pagoda::ModuleDefinitions::FullyConnectedModule>(10,11,12, 1, 2);
 
-    // f->replaceModule(1,1,1);
-
-    // for(auto& p : f->parameters()) {
-    //     std::cout << p << std::endl;
-    // }
+    net->insertModule(f);
 
     // f->replaceModule(2,2);
-    
-    // for(auto& p : f->parameters()) {
-    //     std::cout << p << std::endl;
-    // }
+    for(auto& p : f->parameters()) {
+        std::cout << p.sizes().size() << std::endl;
+        
+        std::cout << p << std::endl;
+    }
 
     // f->replaceModule(1,1,1);
 
@@ -44,5 +41,5 @@ int main() {
     //     std::cout << p << std::endl;
     // }
     
-    //net->forward();
+    // net->forward();
 }
