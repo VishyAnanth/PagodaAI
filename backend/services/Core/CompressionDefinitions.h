@@ -121,7 +121,7 @@ namespace CompressionDefintions {
                                 inputsTemp >>= 8;
                             }
 
-                            (*this->m_intermediateObject->getLocationIndexPointer())[adj] = moduleIndex++;
+                            (*this->m_intermediateObject->getLocationIndexPointer())[adj] = moduleIndex;
                             locationIndexByteSize = std::max(locationIndexByteSize, 
                             (uint8_t)((moduleIndex <= 0xFF)?1:
                                             (moduleIndex <= 0xFFFF)?2:
@@ -130,6 +130,7 @@ namespace CompressionDefintions {
                                             (moduleIndex <= 0xFFFFFFFFFF)?5:
                                             (moduleIndex <= 0xFFFFFFFFFFFF)?6:
                                             (moduleIndex <= 0xFFFFFFFFFFFFFF)?7:8));
+                            moduleIndex++;
                                 
                             moduleBytes.emplace_back(locationIndexByteSize);
                             
@@ -156,10 +157,80 @@ namespace CompressionDefintions {
     }; //class GraphCompression
     
     class TensorCompression : public GeneralCompression {
+    private:
+        double m_error = 1e-7; //This needs to be determined/learned eventually, setting arbitrarily for now
     public:
         virtual void compress(SourceObject*& p_sourceObject, CompressedObject*& p_compressedObject) {
-            for(auto& elem : *this->m_intermediateObject->getByteMapPointer()) {
-                
+            std::vector<uint8_t> moduleBytes;
+            std::unordered_map<uint64_t, std::shared_ptr<Pagoda::GeneralDefinitions::GeneralObject> > modules = p_sourceObject->getSource()->getModules();
+            std::vector<uint64_t> sizeVec;
+            torch::Tensor tempTensor, newCore, U, S, V;
+            std::vector<torch::Tensor> cores;
+            double frobNorm = 0, truncationParam = 0, el = 0;
+            int64_t rk = 0, rkminus = 0;
+            uint64_t d, counter = 0;
+            int64_t tempReshape, nk;
+            float* ptr;
+            float* endPtr;
+
+            std::unordered_map<uint64_t, std::vector<uint8_t> > byteMapPtr = *this->m_intermediateObject->getByteMapPointer();
+
+            for(auto& elem : byteMapPtr) {
+                for(auto& tensor : modules[elem.first]->parameters()) {
+                    sizeVec.clear();
+                    sizeVec.insert(sizeVec.begin(), tensor.sizes().begin(), tensor.sizes().end());
+                    d = sizeVec.size();
+
+                    ptr = tensor.data_ptr<float>();
+                    endPtr = ptr + tensor.numel();
+                    while(ptr != endPtr) {
+                        el = *ptr++;
+                        frobNorm += el*el;
+                    }
+                    truncationParam = this->m_error * frobNorm / (d - 1);
+                    truncationParam = (truncationParam == 0)?1:truncationParam;
+
+                    tempTensor = tensor;
+                    rkminus = 1;
+                    for(uint64_t k = 1; k < d; k++) {
+                        nk = sizeVec[k - 1];
+                        tempReshape = (int64_t)rkminus * nk;
+                        tempTensor = tempTensor.reshape({tempReshape, tempTensor.numel() / tempReshape});
+                        auto svd = torch::linalg::svd(tempTensor, false);
+                        U = std::get<0>(svd), S = std::get<1>(svd), V = std::get<2>(svd);
+
+                        ptr = S.data_ptr<float>();
+                        endPtr = ptr + S.numel();
+                        counter = 0;
+                        frobNorm = 0;
+                        while(endPtr != ptr && frobNorm < truncationParam) {
+                            el = *--endPtr;
+                            frobNorm += el*el;
+                            counter++;
+                        }
+                        rk = (endPtr == ptr)?1:std::min(S.sizes()[0], (int64_t)(S.numel() - counter + 1));
+
+                        U = U.slice(1, 0, rk);
+                        S = S.slice(0, 0, rk);
+                        V = V.slice(0, 0, rk);
+                        
+                        S = S.diag();
+
+                        newCore = U.reshape({(int64_t)rkminus, nk, (int64_t)rk});
+                        tempTensor = S.matmul(V);
+
+                        cores.emplace_back(newCore.squeeze());
+
+                        rkminus = rk;
+                    }
+                    cores.emplace_back(tempTensor.squeeze());
+                    /*
+
+                        [core size][core data]
+                        []
+                    */
+                    
+                }
             }
         }
 
