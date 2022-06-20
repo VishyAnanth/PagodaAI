@@ -86,7 +86,7 @@ namespace CompressionDefintions {
             q.push(0);
 
             uint8_t inputsBytes, locationIndexByteSize = 0;
-            uint64_t currentModule, moduleIndex = 0, inputsSize, inputsTemp;
+            uint64_t currentModule, moduleIndex = 0, inputsSize;
             std::vector<uint8_t> moduleBytes;
 
             torch::Tensor t = torch::tensor(1);
@@ -115,10 +115,9 @@ namespace CompressionDefintions {
                                             (inputsSize <= 0xFFFFFFFFFFFF)?6:
                                             (inputsSize <= 0xFFFFFFFFFFFFFF)?7:8;
                             moduleBytes.emplace_back(inputsBytes);
-                            inputsTemp = inputsSize;
-                            while(inputsTemp != 0) {
-                                moduleBytes.emplace_back(static_cast<uint8_t>(inputsTemp));
-                                inputsTemp >>= 8;
+                            while(inputsSize != 0) {
+                                moduleBytes.emplace_back(static_cast<uint8_t>(inputsSize));
+                                inputsSize >>= 8;
                             }
 
                             (*this->m_intermediateObject->getLocationIndexPointer())[adj] = moduleIndex;
@@ -135,10 +134,10 @@ namespace CompressionDefintions {
                             moduleBytes.emplace_back(locationIndexByteSize);
                             
                             for(auto& input : *p_sourceObject->getSource()->getModules()[adj]->getInputsPointer()) {
-                                inputsTemp = (*this->m_intermediateObject->getLocationIndexPointer())[input.first];
+                                inputsSize = (*this->m_intermediateObject->getLocationIndexPointer())[input.first];
                                 for(uint8_t i = 0; i < locationIndexByteSize; i++) {
-                                    moduleBytes.emplace_back(static_cast<uint8_t>(inputsTemp));
-                                    inputsTemp >>= 8;
+                                    moduleBytes.emplace_back(static_cast<uint8_t>(inputsSize));
+                                    inputsSize >>= 8;
                                 }
                             }
 
@@ -167,11 +166,12 @@ namespace CompressionDefintions {
             torch::Tensor tempTensor, newCore, U, S, V;
             std::vector<torch::Tensor> cores;
             double frobNorm = 0, truncationParam = 0, el = 0;
-            int64_t rk = 0, rkminus = 0;
-            uint64_t d, counter = 0;
-            int64_t tempReshape, nk;
+            int64_t rk = 0, rkminus = 0, tempReshape, nk;
+            uint64_t d, counter = 0, coreSize;
+            uint32_t tempCoreElem;
             float* ptr;
             float* endPtr;
+            uint8_t coreSizeByte;
 
             std::unordered_map<uint64_t, std::vector<uint8_t> > byteMapPtr = *this->m_intermediateObject->getByteMapPointer();
 
@@ -201,12 +201,11 @@ namespace CompressionDefintions {
 
                         ptr = S.data_ptr<float>();
                         endPtr = ptr + S.numel();
-                        counter = 0;
+                        counter = (int64_t)(endPtr - ptr);
                         frobNorm = 0;
                         while(endPtr != ptr && frobNorm < truncationParam) {
                             el = *--endPtr;
                             frobNorm += el*el;
-                            counter++;
                         }
                         rk = (endPtr == ptr)?1:std::min(S.sizes()[0], (int64_t)(S.numel() - counter + 1));
 
@@ -218,18 +217,61 @@ namespace CompressionDefintions {
 
                         newCore = U.reshape({(int64_t)rkminus, nk, (int64_t)rk});
                         tempTensor = S.matmul(V);
-
-                        cores.emplace_back(newCore.squeeze());
-
+                        newCore = newCore.squeeze();
+                        
+                        for(auto it = newCore.sizes().begin(); it != newCore.sizes().end(); it++) {
+                            coreSize = *it;
+                            coreSizeByte = (uint8_t)((coreSize <= 0xFF)?1:
+                                    (coreSize <= 0xFFFF)?2:
+                                    (coreSize <= 0xFFFFFF)?3:
+                                    (coreSize <= 0xFFFFFFFF)?4:
+                                    (coreSize <= 0xFFFFFFFFFF)?5:
+                                    (coreSize <= 0xFFFFFFFFFFFF)?6:
+                                    (coreSize <= 0xFFFFFFFFFFFFFF)?7:8);
+                            moduleBytes.emplace_back(coreSizeByte);
+                            while(coreSize != 0) {
+                                moduleBytes.emplace_back(static_cast<uint8_t>(coreSize));
+                                coreSize >>= 8;
+                            }
+                        }
+                        ptr = newCore.data_ptr<float>();
+                        endPtr = newCore.data_ptr<float>() + newCore.numel();
+                        while(ptr != endPtr) {
+                            tempCoreElem = *(uint32_t*)&(*ptr);
+                            moduleBytes.emplace_back(tempCoreElem);
+                            moduleBytes.emplace_back(tempCoreElem >> 8);
+                            moduleBytes.emplace_back(tempCoreElem >> 16);
+                            moduleBytes.emplace_back(tempCoreElem >> 24);
+                            ptr++;
+                        }
                         rkminus = rk;
                     }
-                    cores.emplace_back(tempTensor.squeeze());
-                    /*
-
-                        [core size][core data]
-                        []
-                    */
-                    
+                    newCore = tempTensor.squeeze();
+                    for(auto it = newCore.sizes().begin(); it != newCore.sizes().end(); it++) {
+                        coreSize = *it;
+                        coreSizeByte = (uint8_t)((coreSize <= 0xFF)?1:
+                                (coreSize <= 0xFFFF)?2:
+                                (coreSize <= 0xFFFFFF)?3:
+                                (coreSize <= 0xFFFFFFFF)?4:
+                                (coreSize <= 0xFFFFFFFFFF)?5:
+                                (coreSize <= 0xFFFFFFFFFFFF)?6:
+                                (coreSize <= 0xFFFFFFFFFFFFFF)?7:8);
+                        moduleBytes.emplace_back(coreSizeByte);
+                        while(coreSize != 0) {
+                            moduleBytes.emplace_back(static_cast<uint8_t>(coreSize));
+                            coreSize >>= 8;
+                        }
+                    }
+                    ptr = newCore.data_ptr<float>();
+                    endPtr = newCore.data_ptr<float>() + newCore.numel();
+                    while(ptr != endPtr) {
+                        tempCoreElem = *(uint32_t*)&(*ptr);
+                        moduleBytes.emplace_back(tempCoreElem);
+                        moduleBytes.emplace_back(tempCoreElem >> 8);
+                        moduleBytes.emplace_back(tempCoreElem >> 16);
+                        moduleBytes.emplace_back(tempCoreElem >> 24);
+                        ptr++;
+                    }
                 }
             }
         }
@@ -239,10 +281,32 @@ namespace CompressionDefintions {
         }
     }; //class TensorCompression
 
+    /*
+        o changges [0, 1] 2
+
+        0 changes [00, 11] 2
+        1 change [01, 10] 2
+
+        0 changes [000, 111]  2
+        1 change [001, 011, 100, 110]  4
+        2 changes [010, 101]  2
+
+        0 changes [0000, 1111]  2
+        1 change [0111, 0011, 0001, 1000, 1100, 1110]  6
+        2 changes [0100, 0010, 0110, 1011, 1101, 1001]  6
+        3 changes [0101, 1010]  2
+
+        00010010 11010101 11111010 11110111 00000001 01010001 00111000 11010010 10001011 01100111 00101011 01011000
+
+    */  
     class ValueCompression : public GeneralCompression {
     public:
         virtual void compress(SourceObject*& p_sourceObject, CompressedObject*& p_compressedObject) {
+            std::unordered_map<uint64_t, std::vector<uint8_t> > byteMapPtr = *this->m_intermediateObject->getByteMapPointer();
             
+            for(auto& elem : byteMapPtr) {
+                
+            }
         }
 
         virtual void decompress(CompressedObject*& p_sourceObject, SourceObject*& p_decompressedObject) {

@@ -58,7 +58,7 @@ public class EmailService {
         EmailOutputDTO res = new EmailOutputDTO()
         .setStatus(Status.SUCCESS);
         
-        if(!EmailValidator.getInstance().isValid(dto.getSender()) ||
+        if(!EmailValidator.getInstance().isValid(senderEmail) ||
         !EmailValidator.getInstance().isValid(dto.getRecipient())) {
             return res.setStatus(Status.ERROR);
         }
@@ -74,7 +74,7 @@ public class EmailService {
         try {
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
     
-            helper.setFrom(dto.getSender());
+            helper.setFrom(senderEmail);
             helper.setTo(dto.getRecipient());
             helper.setSubject(details.getEmailFormat().getSubject());
             helper.setText(details.getEmailFormat().getContents());

@@ -67,65 +67,65 @@ int main() {
     // }
     
 
-    torch::Tensor t = torch::from_blob(x.data(), {3,4,5});
-    std::cout << t << std::endl;
+    // torch::Tensor t = torch::from_blob(x.data(), {3,4,5});
+    // std::cout << t << std::endl;
 
-    std::vector<uint64_t> sizeVec;
-    torch::Tensor tempTensor, newCore, U, S, V;
-    std::vector<torch::Tensor> cores;
-    std::vector<torch::Tensor> tempCores;
-    std::vector<std::vector<torch::Tensor> > coresOfCores;
-    double frobNorm = 0, truncationParam = 0, el = 0;
-    int64_t rk = 0, rkminus1 = 0;
-    uint64_t d, counter = 0;
-    int64_t tempReshape, nk;
-    float* ptr;
-    float* endPtr;
+    // std::vector<uint64_t> sizeVec;
+    // torch::Tensor tempTensor, newCore, U, S, V;
+    // std::vector<torch::Tensor> cores;
+    // std::vector<torch::Tensor> tempCores;
+    // std::vector<std::vector<torch::Tensor> > coresOfCores;
+    // double frobNorm = 0, truncationParam = 0, el = 0;
+    // int64_t rk = 0, rkminus1 = 0;
+    // uint64_t d, counter = 0;
+    // int64_t tempReshape, nk;
+    // float* ptr;
+    // float* endPtr;
 
-    sizeVec.clear();
-    sizeVec.insert(sizeVec.begin(), ten1.sizes().begin(), ten1.sizes().end());
-    d = sizeVec.size();
+    // sizeVec.clear();
+    // sizeVec.insert(sizeVec.begin(), ten1.sizes().begin(), ten1.sizes().end());
+    // d = sizeVec.size();
 
-    ptr = ten1.data_ptr<float>();
-    endPtr =  ptr + ten1.numel();
-    while(ptr != endPtr) {
-        el = *ptr++;
-        frobNorm += el*el;
-    }
-    truncationParam = 0.001*frobNorm / (d-1);
-    truncationParam = (truncationParam == 0)?1:truncationParam;
+    // ptr = ten1.data_ptr<float>();
+    // endPtr =  ptr + ten1.numel();
+    // while(ptr != endPtr) {
+    //     el = *ptr++;
+    //     frobNorm += el*el;
+    // }
+    // truncationParam = 0.001*frobNorm / (d-1);
+    // truncationParam = (truncationParam == 0)?1:truncationParam;
 
-    tempTensor = ten1;
-    rkminus1 = 1;
-    for(uint64_t k = 1; k < d; k++) {
-        nk = sizeVec[k - 1];
-        tempReshape = (int64_t)rkminus1 * nk;
-        tempTensor = tempTensor.reshape({tempReshape, tempTensor.numel() / tempReshape});
-        auto svd = torch::linalg::svd(tempTensor, false);
-        U = std::get<0>(svd), S = std::get<1>(svd), V = std::get<2>(svd);
+    // tempTensor = ten1;
+    // rkminus1 = 1;
+    // for(uint64_t k = 1; k < d; k++) {
+    //     nk = sizeVec[k - 1];
+    //     tempReshape = (int64_t)rkminus1 * nk;
+    //     tempTensor = tempTensor.reshape({tempReshape, tempTensor.numel() / tempReshape});
+    //     auto svd = torch::linalg::svd(tempTensor, false);
+    //     U = std::get<0>(svd), S = std::get<1>(svd), V = std::get<2>(svd);
 
-        ptr = S.data_ptr<float>();
-        endPtr = ptr + S.numel();
-        counter = 0;
-        frobNorm = 0;
-        while(endPtr != ptr && frobNorm < truncationParam) {
-            el = *--endPtr;
-            frobNorm += el*el;
-            counter++;
-        }
-        rk = (endPtr == ptr)?1:std::min(S.sizes()[0], (int64_t)(S.numel() - counter + 1));
+    //     ptr = S.data_ptr<float>();
+    //     endPtr = ptr + S.numel();
+    //     counter = 0;
+    //     frobNorm = 0;
+    //     while(endPtr != ptr && frobNorm < truncationParam) {
+    //         el = *--endPtr;
+    //         frobNorm += el*el;
+    //         counter++;
+    //     }
+    //     rk = (endPtr == ptr)?1:std::min(S.sizes()[0], (int64_t)(S.numel() - counter + 1));
 
-        U = U.slice(1, 0, rk);
-        S = S.slice(0, 0, rk);
-        V = V.slice(0, 0, rk);
+    //     U = U.slice(1, 0, rk);
+    //     S = S.slice(0, 0, rk);
+    //     V = V.slice(0, 0, rk);
         
-        S = S.diag();
-        newCore = U.reshape({(int64_t)rkminus1, nk, (int64_t)rk});
-        tempTensor = S.matmul(V);
-        cores.emplace_back(newCore);
-        rkminus1 = rk;
-    }
-    cores.emplace_back(tempTensor);
+    //     S = S.diag();
+    //     newCore = U.reshape({(int64_t)rkminus1, nk, (int64_t)rk});
+    //     tempTensor = S.matmul(V);
+    //     cores.emplace_back(newCore);
+    //     rkminus1 = rk;
+    // }
+    // cores.emplace_back(tempTensor);
 
 
     // auto start = std::chrono::high_resolution_clock::now();
