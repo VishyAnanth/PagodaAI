@@ -4,7 +4,9 @@ project(main)
 find_package(Torch REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS} -Ofast")
 
-add_executable(main main.cpp)
+include_directories(/usr/local/Cellar/asio/1.22.1/include)
+
+add_executable(main main.cpp /usr/local/Cellar/asio/1.22.1/include/asio.hpp)
 target_link_libraries(main ${TORCH_LIBRARIES})
 set_property(TARGET main PROPERTY CXX_STANDARD 14)
 

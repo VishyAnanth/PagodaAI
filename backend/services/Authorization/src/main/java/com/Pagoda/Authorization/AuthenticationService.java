@@ -61,7 +61,7 @@ public class AuthenticationService {
         if(((UserDetailsAuthImplementation)userDetailsService.loadUserByEmail(dto.getUser().getEmail())).getUser() != null) {
             return res.setStatus(Status.ERROR).setMessage("Email already in use.");
         }
-        if(dto.getUser().getUsername().length() == 0 || dto.getUser().getPassword().length() == 0 ||
+        if(dto.getUser().getUsername().length() == 0 || dto.getUser().getPassword().length() < 8 ||
         dto.getUser().getEmail().length() == 0 || dto.getUser().getFirstName().length() == 0 ||
         dto.getUser().getLastName().length() == 0 || !EmailValidator.getInstance().isValid(dto.getUser().getEmail()) 
         || dto.getUser().getUsername().contains(",")) {
@@ -81,7 +81,7 @@ public class AuthenticationService {
         .setEnterpriseId(Long.valueOf(1))
         .setId(new SecureRandom().nextLong())
         .setRoleId(1)
-        .setUserId(dto.getUser().getId())); //Pagpda is by default 1, role id needs to be determined
+        .setUserId(dto.getUser().getId())); //Pagoda is by default 1, role id needs to be determined
 
         return res.setUser(dto.getUser().unsetPassword().unsetId());
     }

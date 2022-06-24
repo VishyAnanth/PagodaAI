@@ -20,9 +20,7 @@ namespace CompressionDefintions {
             this->m_bytes = p_bytes;
         }
 
-        virtual ~CompressedObject() {
-            this->m_bytes.clear();
-        }
+        virtual ~CompressedObject() {}
     }; //class CompressedObject
 
     class IntermediateObject {
@@ -46,10 +44,7 @@ namespace CompressionDefintions {
             this->m_locationIndex = p_locationIndex;
         }
 
-        virtual ~IntermediateObject() {
-            this->m_locationIndex.clear();
-            this->m_byteMap.clear();
-        }
+        virtual ~IntermediateObject() {}
     }; //class IntermediateObject
 
     class SourceObject {
@@ -73,7 +68,7 @@ namespace CompressionDefintions {
         IntermediateObject* m_intermediateObject;
     public:
         virtual void compress(SourceObject*& p_sourceObject, CompressedObject*& p_compressedObject) = 0;
-        virtual void decompress(CompressedObject*& p_sourceObject, SourceObject*& p_decompressedObject) = 0;
+        virtual void decompress(CompressedObject*& p_compressedObject, SourceObject*& p_sourceObject) = 0;
     }; //class GeneralCompressionObject
 
     class GraphCompression : public GeneralCompression {
@@ -150,7 +145,7 @@ namespace CompressionDefintions {
             }
         }
 
-        virtual void decompress(CompressedObject*& p_sourceObject, SourceObject*& p_decompressedObject) {
+        virtual void decompress(CompressedObject*& p_compressedObject, SourceObject*& p_sourceObject) {
             
         }
     }; //class GraphCompression
@@ -276,29 +271,11 @@ namespace CompressionDefintions {
             }
         }
 
-        virtual void decompress(CompressedObject*& p_sourceObject, SourceObject*& p_decompressedObject) {
+        virtual void decompress(CompressedObject*& p_compressedObject, SourceObject*& p_sourceObject) {
             
         }
     }; //class TensorCompression
 
-    /*
-        o changges [0, 1] 2
-
-        0 changes [00, 11] 2
-        1 change [01, 10] 2
-
-        0 changes [000, 111]  2
-        1 change [001, 011, 100, 110]  4
-        2 changes [010, 101]  2
-
-        0 changes [0000, 1111]  2
-        1 change [0111, 0011, 0001, 1000, 1100, 1110]  6
-        2 changes [0100, 0010, 0110, 1011, 1101, 1001]  6
-        3 changes [0101, 1010]  2
-
-        00010010 11010101 11111010 11110111 00000001 01010001 00111000 11010010 10001011 01100111 00101011 01011000
-
-    */  
     class ValueCompression : public GeneralCompression {
     public:
         virtual void compress(SourceObject*& p_sourceObject, CompressedObject*& p_compressedObject) {
@@ -309,7 +286,7 @@ namespace CompressionDefintions {
             }
         }
 
-        virtual void decompress(CompressedObject*& p_sourceObject, SourceObject*& p_decompressedObject) {
+        virtual void decompress(CompressedObject*& p_compressedObject, SourceObject*& p_sourceObject) {
             
         }
     }; //class ValueCompression
@@ -338,38 +315,21 @@ namespace CompressionDefintions {
             }
         }
 
+        void decompress() {
+            if(this->m_sourceObject)
+                delete this->m_sourceObject;
+            this->m_sourceObject = new SourceObject();
+            uint64_t n = this->m_compressionAlgorithms.size();
+            for(uint64_t i = n - 1; i >= 0; i--) {
+                this->m_compressionAlgorithms[i]->decompress(this->m_compressedObject, this->m_sourceObject);
+            }
+        }
+
         std::vector<GeneralCompression*> getCompressionAlgorithms() {
             return this->m_compressionAlgorithms;
         }
         
     }; //class Compressor
-
-    class Decompressor {
-    private:
-        std::vector<GeneralCompression*> m_compressionAlgorithms;
-        CompressedObject* m_sourceObject;
-        SourceObject* m_decompressedObject;
-    public:
-        Decompressor() {}
-        Decompressor(std::vector<GeneralCompression*> p_compressionAlgorithms) {
-            this->m_compressionAlgorithms = p_compressionAlgorithms;
-        }
-        Decompressor(std::vector<GeneralCompression*> p_compressionAlgorithms, CompressedObject* p_sourceObject) {
-            this->m_compressionAlgorithms = p_compressionAlgorithms;
-            this->m_sourceObject = p_sourceObject;
-        }
-
-        void decompress() {
-            if(this->m_decompressedObject)
-                delete this->m_decompressedObject;
-            this->m_decompressedObject = new SourceObject();
-            for(auto& alg : this->m_compressionAlgorithms) {
-                alg->decompress(this->m_sourceObject, this->m_decompressedObject);
-            }
-        }
-
-
-    }; //class Decompressor
 
 } //namespace CompressionDefintions
 } //namespace Pagoda

@@ -5,21 +5,20 @@
 #include <cmath>
 #include <numeric>
 
-#include "/usr/local/opt/libomp/include/omp.h"
+#include "App.h"
 
-#include "GeneralDefinitions.h"
-#include "ModuleDefinitions.h"
-#include "CompressionDefinitions.h"
+// using namespace torch::nn;
 
-
-using namespace torch::nn;
-
-template<typename Iter_T>
-long double vectorNorm(Iter_T first, Iter_T last) {
-    return sqrt(std::inner_product(first, last, first, 0.0L));
-}
+// template<typename Iter_T>
+// long double vectorNorm(Iter_T first, Iter_T last) {
+//     return sqrt(std::inner_product(first, last, first, 0.0L));
+// }
 
 int main() {
+    Pagoda::App app;
+    app.setup();
+    app.run();
+
     // torch::Tensor ten = torch::rand({3, 2}, torch::TensorOptions(torch::kCPU).dtype(at::kFloat)); 
     // std::vector<float> v(ten.data_ptr<float>(), ten.data_ptr<float>() + ten.numel());
 
@@ -33,10 +32,10 @@ int main() {
     // torch::Tensor output = trans(r1, r2);
     // std::cout << "out" << std::endl;
 
-    auto net = std::make_shared<Pagoda::GeneralDefinitions::GeneralNet>();
-    auto f = std::make_shared<Pagoda::ModuleDefinitions::FullyConnectedModule>(10,11,12,1,1);
-    torch::Tensor ten1 = torch::randn({3,4,5});
-    std::cout << ten1 << std::endl;
+    // auto net = std::make_shared<Pagoda::GeneralDefinitions::GeneralNet>();
+    // auto f = std::make_shared<Pagoda::ModuleDefinitions::FullyConnectedModule>(10,11,12,1,1);
+    // torch::Tensor ten1 = torch::randn({3,4,5});
+    // std::cout << ten1 << std::endl;
 
     // float* begin = ten1.data_ptr<float>();
     // float* end = ten1.data_ptr<float>() + ten1.numel();

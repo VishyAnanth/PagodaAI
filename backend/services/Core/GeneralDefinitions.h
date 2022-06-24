@@ -105,6 +105,10 @@ namespace GeneralDefinitions {
             this->m_modules[p_module->getId()] = register_module(std::to_string(p_module->getId()), p_module);
         }
 
+        void editModule(uint64_t p_id, std::shared_ptr<GeneralObject> p_newModule) {
+            this->m_modules[p_id] = replace_module(std::to_string(p_id), p_newModule);
+        }
+
         uint8_t addEdge(uint64_t p_source, uint64_t p_destination) {
             if(this->m_adjacency[p_source].find(p_destination) != this->m_adjacency[p_source].end()
             || this->m_adjacency[p_destination].find(p_source) != this->m_adjacency[p_destination].end()
